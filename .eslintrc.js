@@ -3,16 +3,29 @@ module.exports = {
     parserOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
+      project: './tsconfig.json',
     },
-    plugins: ['@typescript-eslint', 'prettier'],
+    plugins: ['@typescript-eslint', 'prettier', 'import'],
     extends: [
       'eslint:recommended',
       'plugin:@typescript-eslint/recommended',
-      'plugin:prettier/recommended', // Enables eslint-plugin-prettier and eslint-config-prettier
+      'plugin:import/errors',
+      'plugin:import/warnings',
+      'plugin:import/typescript',
+      'plugin:prettier/recommended'
     ],
     rules: {
-      'prettier/prettier': 'error', // Show Prettier errors as ESLint errors
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-    },
+      'prettier/prettier': 'error',
+  
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/consistent-type-imports': 'error',
+  
+      'import/order': ['warn', {
+        groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']],
+        'newlines-between': 'always'
+      }]
+    }
   };
   
