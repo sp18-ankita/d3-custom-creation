@@ -21,6 +21,12 @@ module.exports = {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-use-before-define': ['error'],
+
+      'prefer-const': 'error',
+
+      '@typescript-eslint/no-floating-promises': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
   
       'import/order': ['warn', {
         groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']],
