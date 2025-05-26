@@ -29,8 +29,7 @@ module.exports = {
       'no-console': ['warn', { allow: ['warn', 'error'] }],
   
       'import/order': ['warn', {
-        groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']],
-        'newlines-between': 'always'
+        groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']]
       }]
     }
   };

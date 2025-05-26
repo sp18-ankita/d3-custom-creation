@@ -1,30 +1,70 @@
 import { useState } from 'react';
 import './App.css';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+import { ChartRenderer } from './components/ChartRenderer';
+import type { ChartType, DataPoint } from './enums/ChartType';
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [chartType, setChartType] = useState<ChartType>('bar');
+  const [dataInput, setDataInput] = useState(
+    JSON.stringify(
+      [
+        { label: 'A', value: 30 },
+        { label: 'B', value: 70 },
+      ],
+      null,
+      2,
+    ),
+  );
+
+  const [chartData, setChartData] = useState<DataPoint[]>([]);
+
+  const handleRender = () => {
+    try {
+      const parsed = JSON.parse(dataInput);
+      if (Array.isArray(parsed)) {
+        setChartData(parsed);
+      } else {
+        alert('Data must be an array of objects with label and value');
+      }
+    } catch {
+      alert('Invalid JSON');
+    }
+  };
 
   return (
-    <>
+    <div className="app-container">
+      <h1>D3 Chart Viewer</h1>
+
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <label>
+          Chart Type:&nbsp;
+          <select value={chartType} onChange={e => setChartType(e.target.value as ChartType)}>
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+            <option value="speedometer">Speedometer</option>
+          </select>
+        </label>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount(count => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+
+      <div style={{ marginTop: 10 }}>
+        <label>
+          Data (JSON):
+          <textarea
+            rows={6}
+            cols={50}
+            value={dataInput}
+            onChange={e => setDataInput(e.target.value)}
+          />
+        </label>
       </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+
+      <button onClick={handleRender} style={{ marginTop: 10 }}>
+        Render Chart
+      </button>
+
+      <ChartRenderer type={chartType} data={chartData} />
+    </div>
   );
 }
 
