@@ -1,54 +1,104 @@
-# React + TypeScript + Vite
+## 🩹 Linting & Code Style
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+We use **ESLint**, **Prettier**, and **TypeScript** to enforce consistent, high-quality code. This ensures readability, avoids bugs, and makes onboarding easier.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 📦 Install Dependencies
 
-## Expanding the ESLint configuration
+Run this once after cloning the repo:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+### 🧪 Run the Linter
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-});
+To check for code issues:
+
+```bash
+npm run lint
+```
+
+---
+
+### 🧼 Auto-Fix Issues
+
+To automatically fix problems (like formatting and common bugs):
+
+```bash
+npm run lint:fix
+```
+
+---
+
+### 💅 Format Code with Prettier
+
+To format all supported files:
+
+```bash
+npm run format
+```
+
+---
+
+### 🔐 Git Pre-commit Hook (Husky + lint-staged)
+
+We use **Husky** and **lint-staged** to ensure all staged files pass linting and formatting before you commit.
+
+#### Setup (Run Once):
+
+```bash
+npm install --save-dev husky lint-staged
+npx husky install
+npm run prepare
+```
+
+#### Add Pre-commit Hook:
+
+```bash
+npx husky add .husky/pre-commit "npx lint-staged"
+```
+
+#### Example in `package.json`:
+
+```json
+"scripts": {
+  "prepare": "husky install",
+  "lint": "eslint . --ext .ts,.tsx",
+  "lint:fix": "eslint . --fix --ext .ts,.tsx",
+  "format": "prettier --write ."
+},
+"lint-staged": {
+  "*.{ts,tsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ]
+}
+```
+
+---
+
+### ✅ Linting Highlights
+
+- ✅ Consistent import order and spacing
+- ✅ No unused variables or imports
+- ✅ Enforced naming conventions and file structure
+- ✅ Auto-formatting with Prettier
+- ✅ Strict TypeScript rules (e.g., no `any`, explicit return types)
+
+---
+
+> 💡 Pro Tip: Add a [VSCode workspace setting](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) to run ESLint/Prettier automatically on save.
+
+```json
+// .vscode/settings.json
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
 ```
