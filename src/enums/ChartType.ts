@@ -9,3 +9,9 @@ export type PieData = {
   label: string;
   value: number;
 };
+
+export type Zone = {
+  from: number;
+  to: number;
+  color: string;
+};

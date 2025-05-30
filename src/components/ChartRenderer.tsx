@@ -3,7 +3,7 @@ import type { ChartType } from '../enums/ChartType';
 import { BarChart } from './charts/Barchart';
 import { LineChart } from './charts/Linechart';
 import { PieChart } from './charts/Piechart';
-import Speedometer from './charts/Speedometer';
+import { Speedometer } from './charts/Speedometer';
 
 interface ChartRendererProps {
   type: ChartType;

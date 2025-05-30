@@ -1,11 +1,6 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef } from 'react';
-
-type Zone = {
-  from: number;
-  to: number;
-  color: string;
-};
+import type { Zone } from '../../enums/ChartType';
 
 type SpeedometerProps = {
   value: number;
@@ -19,21 +14,20 @@ type SpeedometerProps = {
   endAngle?: number; // degrees
 };
 
-const Speedometer: React.FC<SpeedometerProps> = ({
+export const Speedometer: React.FC<SpeedometerProps> = ({
   value,
   min = 0,
   max = 100,
-  width = 300,
+  width = 320,
   height = 180,
   majorTicks = 5,
   zones = [
-    { from: 0, to: 30, color: '#4caf50' }, // Green: 0-30
-    { from: 30, to: 70, color: '#ffeb3b' }, // Yellow: 30-70
-    { from: 70, to: 100, color: '#f44336' }, // Red: 70-100
+    { from: 0, to: 30, color: '#4caf50' },
+    { from: 30, to: 70, color: '#ffeb3b' },
+    { from: 70, to: 100, color: '#f44336' },
   ],
-
-  startAngle = 0,
-  endAngle = 180,
+  startAngle = -135,
+  endAngle = 135,
 }) => {
   const ref = useRef<SVGSVGElement | null>(null);
 
@@ -54,6 +48,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
 
     const innerRadius = radius - 20;
 
+    // Draw colored zones
     zones.forEach(zone => {
       const arcPath = d3.arc<d3.DefaultArcObject>().innerRadius(innerRadius).outerRadius(radius)({
         startAngle: angleScale(zone.from),
@@ -69,11 +64,17 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('transform', `translate(${centerX},${centerY})`);
     });
 
-    const tickValues = [];
-    for (let i = 0; i <= majorTicks; i++) {
-      tickValues.push(min + (i * (max - min)) / majorTicks);
+    // Calculate ticks
+    const validMajorTicks = Number(majorTicks);
+    if (isNaN(validMajorTicks) || validMajorTicks <= 0) {
+      return;
     }
 
+    const tickValues = d3
+      .range(0, validMajorTicks + 1)
+      .map(i => min + (i * (max - min)) / validMajorTicks);
+
+    // Draw ticks and labels
     tickValues.forEach(tick => {
       const angle = angleScale(tick);
 
@@ -106,11 +107,13 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('dominant-baseline', 'central')
         .attr('font-size', '12px')
         .attr('fill', '#333')
-        .text(Math.round(tick)); // Round for cleaner labels
+        .text(Math.round(tick));
     });
 
+    // Draw center pivot
     svg.append('circle').attr('cx', centerX).attr('cy', centerY).attr('r', 6).attr('fill', '#000');
 
+    // Draw needle
     const needleGroup = svg.append('g');
     const needleLength = radius - 40;
 
@@ -118,8 +121,8 @@ const Speedometer: React.FC<SpeedometerProps> = ({
       .append('line')
       .attr('x1', centerX)
       .attr('y1', centerY)
-      .attr('x2', centerX)
-      .attr('y2', centerY - needleLength)
+      .attr('x2', centerX + needleLength)
+      .attr('y2', centerY)
       .attr('stroke', 'black')
       .attr('stroke-width', 3)
       .attr('stroke-linecap', 'round');
@@ -127,7 +130,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
     const angleDeg = (angleScale(value) * 180) / Math.PI;
     const prevTransform = needleGroup.attr('transform');
     const prevAngleMatch = prevTransform?.match(/rotate\(([-\d.]+)/);
-    const prevAngle = prevAngleMatch ? parseFloat(prevAngleMatch[1]) : 0;
+    const prevAngle = prevAngleMatch ? parseFloat(prevAngleMatch[1]) : startAngle;
 
     needleGroup
       .attr('transform', `rotate(${prevAngle},${centerX},${centerY})`)
@@ -140,17 +143,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
           `rotate(${angleDeg},${centerX},${centerY})`,
         ),
       );
-
-    // svg.append('text')
-    //   .attr('x', centerX)
-    //   .attr('y', centerY + 40)
-    //   .attr('text-anchor', 'middle')
-    //   .attr('font-size', '16px')
-    //   .attr('fill', '#000')
-    //   .text(`${value}`);
   }, [value, min, max, width, height, majorTicks, zones, startAngle, endAngle]);
 
   return <svg ref={ref} width={width} height={height} />;
 };
-
-export default Speedometer;
