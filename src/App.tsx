@@ -24,6 +24,7 @@ export const App: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('bar');
 
   const [dataInput, setDataInput] = useState<string>(JSON.stringify(DEFAULT_DATA, null, 2));
+
   const [chartData, setChartData] = useState<DataPoint[]>(DEFAULT_DATA);
 
   const [value, setValue] = useState('45');
