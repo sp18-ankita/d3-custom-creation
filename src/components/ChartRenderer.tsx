@@ -1,28 +1,26 @@
 import React from 'react';
+import { ChartConfig, type ChartData } from '../config/ChartConfig';
 import type { ChartType } from '../enums/ChartType';
-import { BarChart } from './charts/Barchart';
-import { LineChart } from './charts/Linechart';
-import { PieChart } from './charts/Piechart';
-import { Speedometer } from './charts/Speedometer';
 
-interface ChartRendererProps {
+export interface GenericChartRendererProps {
   type: ChartType;
-  data: { label: string; value: number }[];
+  data: ChartData[];
+  customProps?: Record<string, unknown>; // Replaced 'any' with 'unknown'
 }
 
-export const ChartRenderer: React.FC<ChartRendererProps> = ({ type, data }) => {
-  switch (type) {
-    case 'bar':
-      return <BarChart data={data} />;
-    case 'line':
-      return <LineChart data={data} />;
-    case 'pie':
-      return <PieChart data={data} />;
-    case 'speedometer':
-      return (
-        <Speedometer value={70} min={0} max={100} startAngle={-90} endAngle={90} width={500} />
-      );
-    default:
-      return <p>Unsupported chart type</p>;
+export const GenericChartRenderer: React.FC<GenericChartRendererProps> = ({
+  type,
+  data,
+  customProps = {},
+}) => {
+  const config = ChartConfig[type];
+
+  if (!config) {
+    return <p>Unsupported chart type: {type}</p>;
   }
+
+  const ChartComponent = config.component;
+  const props = { ...config.mapProps(data), ...customProps };
+
+  return <ChartComponent {...props} />;
 };
