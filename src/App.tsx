@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import './App.css';
 
-import { ChartRenderer } from './components/ChartRenderer';
 import type { ChartType, DataPoint, Zone } from './enums/ChartType';
 
+import { GenericChartRenderer } from './components/ChartRenderer';
 import { Speedometer } from './components/charts/Speedometer';
 import { ChartTypeSelector } from './components/ChartTypeSelector';
 import { JsonInput } from './components/JsonInput';
@@ -101,7 +101,7 @@ export const App: React.FC = () => {
             Render Chart
           </button>
           <div style={{ marginTop: 20 }}>
-            <ChartRenderer type={chartType} data={chartData} />
+            <GenericChartRenderer type={chartType} data={chartData} />
           </div>
         </>
       )}
