@@ -23,9 +23,9 @@ export type SpeedometerProps = {
   width: number;
 };
 
-type ChartConfigEntry = {
-  component: React.ComponentType<ChartComponentProps | SpeedometerProps>;
-  mapProps: (data: ChartData[]) => ChartComponentProps | SpeedometerProps;
+type ChartConfigEntry<T = ChartComponentProps> = {
+  component: React.ComponentType<T>;
+  mapProps: (data: ChartData[]) => T;
 };
 
 export const ChartConfig: Record<ChartType, ChartConfigEntry> = {
@@ -51,5 +51,5 @@ export const ChartConfig: Record<ChartType, ChartConfigEntry> = {
       endAngle: 90,
       width: 500,
     }),
-  },
+  } as ChartConfigEntry<SpeedometerProps> as unknown as ChartConfigEntry<ChartComponentProps>,
 };

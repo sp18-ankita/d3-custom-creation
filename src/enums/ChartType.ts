@@ -1,4 +1,4 @@
-export type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter' | 'speedometer';
+export type ChartType = 'bar' | 'line' | 'pie' | 'speedometer';
 
 export type DataPoint = {
   label: string;
