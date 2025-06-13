@@ -1,6 +1,6 @@
 import React from 'react';
-import { ChartConfig, type ChartData } from '../config/ChartConfig';
-import type { ChartType } from '../enums/ChartType';
+import { ChartConfig, type ChartData } from '../../config/ChartConfig';
+import type { ChartType } from '../../enums/ChartType';
 
 export interface GenericChartRendererProps {
   type: ChartType;

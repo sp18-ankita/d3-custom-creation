@@ -15,3 +15,5 @@ export type Zone = {
   to: number;
   color: string;
 };
+
+export const ChartTypeValues = ['Bar', 'Line', 'Pie', 'Speedometer'] as const;
