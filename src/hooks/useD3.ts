@@ -10,7 +10,7 @@ export const useD3 = (
     const svg = d3.select(ref.current);
     svg.selectAll('*').remove();
     renderFn(svg);
-  }, [ref.current]);
+  }, [renderFn]);
 
   return ref;
 };
