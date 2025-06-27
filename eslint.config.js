@@ -23,5 +23,6 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
+    ignores: ['coverage/**'],
   },
 );
