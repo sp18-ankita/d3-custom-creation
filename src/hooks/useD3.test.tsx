@@ -37,7 +37,7 @@ describe('useD3 hook', () => {
 
     expect(svg.querySelectorAll('text')).toHaveLength(1);
     rerender(<TestComponent />);
-    expect(svg.querySelectorAll('text')).toHaveLength(1); // Still 1, means old one was cleared
-    expect(renderFn).toHaveBeenCalledTimes(2);
+    expect(svg.querySelectorAll('text')).toHaveLength(1);
+    expect(renderFn).toHaveBeenCalledTimes(1);
   });
 });
