@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const ChartWrapper: React.FC<Props> = ({ width = 400, height = 300, children }) => (
-  <svg width={width} height={height}>
+  <svg data-testid="chart-wrapper" width={width} height={height}>
     {children}
   </svg>
 );

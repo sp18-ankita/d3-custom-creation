@@ -1,39 +1,41 @@
 import React, { useState } from 'react';
 import './App.css';
 
-import type { ChartType, DataPoint, Zone } from './enums/ChartType';
+import type { DataPoint } from './enums/ChartType';
 
 import { GenericChartRenderer } from './components/ChartRenderer';
 import { Speedometer } from './components/charts/Speedometer';
 import { ChartTypeSelector } from './components/ChartTypeSelector';
 import { JsonInput } from './components/JsonInput';
 import { SpeedometerControls } from './components/SpeedometerControls';
+import { useChartContext } from './hooks/useChartContext';
 
 const DEFAULT_DATA: DataPoint[] = [
   { label: 'A', value: 30 },
   { label: 'B', value: 70 },
 ];
 
-const DEFAULT_ZONES: Zone[] = [
-  { from: 0, to: 30, color: '#4caf50' },
-  { from: 30, to: 70, color: '#ffeb3b' },
-  { from: 70, to: 100, color: '#f44336' },
-];
-
 export const App: React.FC = () => {
-  const [chartType, setChartType] = useState<ChartType>('bar');
-
   const [dataInput, setDataInput] = useState<string>(JSON.stringify(DEFAULT_DATA, null, 2));
 
   const [chartData, setChartData] = useState<DataPoint[]>(DEFAULT_DATA);
 
-  const [value, setValue] = useState('45');
-  const [min, setMin] = useState('0');
-  const [max, setMax] = useState('100');
-  const [majorTicks, setMajorTicks] = useState('5');
-
-  const [zonesJson, setZonesJson] = useState<string>(JSON.stringify(DEFAULT_ZONES, null, 2));
-  const [zones, setZones] = useState<Zone[]>(DEFAULT_ZONES);
+  const {
+    chartType,
+    setChartType,
+    value,
+    setValue,
+    min,
+    setMin,
+    max,
+    setMax,
+    majorTicks,
+    setMajorTicks,
+    zones,
+    setZones,
+    zonesJson,
+    setZonesJson,
+  } = useChartContext();
 
   const handleRenderData = () => {
     try {
