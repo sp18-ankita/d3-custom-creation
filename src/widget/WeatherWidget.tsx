@@ -15,7 +15,6 @@ export const WeatherWidget: React.FC = () => {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-
         const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
         const city = 'Bhubaneshwar';
         const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
