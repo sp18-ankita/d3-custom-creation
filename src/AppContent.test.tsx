@@ -44,7 +44,7 @@ describe('AppContent', () => {
   });
 
   it('shows alert on invalid JSON', () => {
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => { });
     renderWithRouter();
 
     const input = screen.getByLabelText(/Data \(JSON\)/i);
