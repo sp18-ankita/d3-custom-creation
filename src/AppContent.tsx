@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 
 import type { DataPoint } from './enums/ChartType';
@@ -17,8 +18,8 @@ const DEFAULT_DATA: DataPoint[] = [
 ];
 
 export const AppContent: React.FC = () => {
+  const navigate = useNavigate();
   const [dataInput, setDataInput] = useState<string>(JSON.stringify(DEFAULT_DATA, null, 2));
-
   const [chartData, setChartData] = useState<DataPoint[]>(DEFAULT_DATA);
 
   const {
@@ -77,7 +78,6 @@ export const AppContent: React.FC = () => {
     }
   };
 
-  // Convert string inputs to numbers safely
   const speedValue = value === '' ? NaN : parseFloat(value);
   const speedMin = min === '' ? NaN : parseFloat(min);
   const speedMax = max === '' ? NaN : parseFloat(max);
@@ -87,7 +87,10 @@ export const AppContent: React.FC = () => {
     !isNaN(speedValue) && !isNaN(speedMin) && !isNaN(speedMax) && !isNaN(speedMajorTicks);
 
   return (
-    <div className="app-container" style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
+    <div
+      className="app-container"
+      style={{ padding: 20, fontFamily: 'Arial, sans-serif', position: 'relative' }}
+    >
       <WeatherWidget />
       <h1>D3 Chart Viewer</h1>
 
@@ -146,6 +149,25 @@ export const AppContent: React.FC = () => {
           </div>
         </>
       )}
+
+      <button
+        onClick={() => navigate('/about')}
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          backgroundColor: '#007bff',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '999px',
+          padding: '10px 20px',
+          fontSize: '16px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          cursor: 'pointer',
+        }}
+      >
+        About App
+      </button>
     </div>
   );
 };

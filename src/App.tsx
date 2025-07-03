@@ -1,9 +1,15 @@
-import AppContent from './AppContent';
+// src/App.tsx
+import React from 'react';
+
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './AppRoutes';
 import { ChartProvider } from './hooks/useChartContext';
 
-export const App: React.FC = () => (
+const App: React.FC = () => (
   <ChartProvider>
-    <AppContent />
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   </ChartProvider>
 );
 
