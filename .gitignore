@@ -26,3 +26,5 @@ dist-ssr
 # Vitest / Jest / Vite / Coverage
 coverage/
 *.lcov
+
+test-results

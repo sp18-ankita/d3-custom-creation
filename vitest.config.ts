@@ -7,5 +7,8 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'html'],
     },
+
+    include: ['src/**/*.{test,spec}.{ts,tsx}'], // ✅ Only include tests inside src/
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'], // ✅ Explicitly exclude e2e and other folders
   },
 });
