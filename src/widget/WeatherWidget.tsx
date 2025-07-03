@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
-// src/components/WeatherWidget.tsx
->>>>>>> 6c538b3 (Updated the tes cases)
+
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
@@ -18,16 +15,10 @@ export const WeatherWidget: React.FC = () => {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-<<<<<<< HEAD
+
         const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
         const city = 'Bhubaneshwar';
         const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
-=======
-        const apiKey = 'f7429ca057dcb2b75a0e591ee9743a7e'; // Replace with your OpenWeatherMap API key
-        const city = 'Bhubaneshwar'; // You can make this dynamic later
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
-
->>>>>>> 6c538b3 (Updated the tes cases)
         const response = await axios.get(url);
         const data = response.data;
 
@@ -45,8 +36,8 @@ export const WeatherWidget: React.FC = () => {
     fetchWeather();
   }, []);
 
-<<<<<<< HEAD
   if (!weather) return null;
+
 
   return (
     <div
@@ -70,22 +61,12 @@ export const WeatherWidget: React.FC = () => {
       <img src={weather.icon} alt={weather.description} width={36} height={36} />
       <div style={{ lineHeight: '1.2' }}>
         <strong>{weather.city}</strong>
-        <div>{Math.round(weather.temp)}°C</div>
-        <div style={{ textTransform: 'capitalize', fontSize: '12px' }}>{weather.description}</div>
-=======
-  if (!weather) return <div>Loading weather...</div>;
-
-  return (
-    <div style={{ textAlign: 'right', position: 'absolute', top: 20, right: 20 }}>
-      <div style={{ backgroundColor: '#f0f0f0', padding: '10px 15px', borderRadius: 8 }}>
-        <strong>{weather.city}</strong>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <img src={weather.icon} alt={weather.description} />
           <span>
             {Math.round(weather.temp)}°C, {weather.description}
           </span>
         </div>
->>>>>>> 6c538b3 (Updated the tes cases)
       </div>
     </div>
   );
