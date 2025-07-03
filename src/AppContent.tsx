@@ -87,87 +87,89 @@ export const AppContent: React.FC = () => {
     !isNaN(speedValue) && !isNaN(speedMin) && !isNaN(speedMax) && !isNaN(speedMajorTicks);
 
   return (
-    <div
-      className="app-container"
-      style={{ padding: 20, fontFamily: 'Arial, sans-serif', position: 'relative' }}
-    >
+    <div>
       <WeatherWidget />
-      <h1>D3 Chart Viewer</h1>
-
-      <ChartTypeSelector chartType={chartType} onChange={setChartType} />
-
-      {chartType !== 'speedometer' && (
-        <>
-          <JsonInput
-            label="Data (JSON)"
-            value={dataInput}
-            onChange={setDataInput}
-            onValidate={handleRenderData}
-          />
-          <button onClick={handleRenderData} style={{ marginTop: 10 }}>
-            Render Chart
-          </button>
-          <div style={{ marginTop: 20 }}>
-            <GenericChartRenderer type={chartType} data={chartData} />
-          </div>
-        </>
-      )}
-
-      {chartType === 'speedometer' && (
-        <>
-          <SpeedometerControls
-            value={value}
-            onValueChange={setValue}
-            min={min}
-            onMinChange={setMin}
-            max={max}
-            onMaxChange={setMax}
-            majorTicks={majorTicks}
-            onMajorTicksChange={setMajorTicks}
-            zonesJson={zonesJson}
-            onZonesJsonChange={setZonesJson}
-            onZonesValidate={handleValidateZones}
-          />
-          <div style={{ marginTop: 20 }}>
-            {isSpeedometerReady ? (
-              <Speedometer
-                value={speedValue}
-                min={speedMin}
-                max={speedMax}
-                majorTicks={speedMajorTicks}
-                zones={zones}
-                width={400}
-                height={220}
-                startAngle={-180}
-                endAngle={180}
-              />
-            ) : (
-              <p style={{ color: 'red' }}>
-                Please enter valid numeric values for all speedometer fields.
-              </p>
-            )}
-          </div>
-        </>
-      )}
-
-      <button
-        onClick={() => navigate('/about')}
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 20,
-          backgroundColor: '#007bff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '999px',
-          padding: '10px 20px',
-          fontSize: '16px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          cursor: 'pointer',
-        }}
+      <div
+        className="app-container"
+        style={{ padding: 20, fontFamily: 'Arial, sans-serif', position: 'relative' }}
       >
-        About App
-      </button>
+        <h1>D3 Chart Viewer</h1>
+
+        <ChartTypeSelector chartType={chartType} onChange={setChartType} />
+
+        {chartType !== 'speedometer' && (
+          <>
+            <JsonInput
+              label="Data (JSON)"
+              value={dataInput}
+              onChange={setDataInput}
+              onValidate={handleRenderData}
+            />
+            <button onClick={handleRenderData} style={{ marginTop: 10 }}>
+              Render Chart
+            </button>
+            <div style={{ marginTop: 20 }}>
+              <GenericChartRenderer type={chartType} data={chartData} />
+            </div>
+          </>
+        )}
+
+        {chartType === 'speedometer' && (
+          <>
+            <SpeedometerControls
+              value={value}
+              onValueChange={setValue}
+              min={min}
+              onMinChange={setMin}
+              max={max}
+              onMaxChange={setMax}
+              majorTicks={majorTicks}
+              onMajorTicksChange={setMajorTicks}
+              zonesJson={zonesJson}
+              onZonesJsonChange={setZonesJson}
+              onZonesValidate={handleValidateZones}
+            />
+            <div style={{ marginTop: 20 }}>
+              {isSpeedometerReady ? (
+                <Speedometer
+                  value={speedValue}
+                  min={speedMin}
+                  max={speedMax}
+                  majorTicks={speedMajorTicks}
+                  zones={zones}
+                  width={400}
+                  height={220}
+                  startAngle={-180}
+                  endAngle={180}
+                />
+              ) : (
+                <p style={{ color: 'red' }}>
+                  Please enter valid numeric values for all speedometer fields.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        <button
+          onClick={() => navigate('/about')}
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '10px 20px',
+            fontSize: '16px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            cursor: 'pointer',
+          }}
+        >
+          About App
+        </button>
+      </div>
     </div>
   );
 };

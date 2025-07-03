@@ -14,9 +14,9 @@ export const WeatherWidget: React.FC = () => {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const apiKey = 'f7429ca057dcb2b75a0e591ee9743a7e';
+        const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
         const city = 'Bhubaneshwar';
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+        const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
         const response = await axios.get(url);
         const data = response.data;
 
