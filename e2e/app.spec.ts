@@ -85,4 +85,25 @@ test.describe('D3 Chart Viewer', () => {
 
     await expect(page.locator('svg')).toBeVisible();
   });
+  test('navigates to Contact page and displays the contact form', async ({ page }) => {
+    await page.getByRole('button', { name: /Contact Us/i }).click();
+
+    // Assert fields are visible
+    await expect(page.getByLabel(/Name/i)).toBeVisible();
+    await expect(page.getByLabel(/Email/i)).toBeVisible();
+    await expect(page.getByLabel(/Phone/i)).toBeVisible();
+    await expect(page.getByLabel(/Subject/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Submit/i })).toBeVisible();
+  });
+
+  test('submits the contact form with valid data', async ({ page }) => {
+    await page.getByRole('button', { name: /Contact Us/i }).click();
+
+    await page.getByLabel(/Name/i).fill('John Doe');
+    await page.getByLabel(/Email/i).fill('john@example.com');
+    await page.getByLabel(/Phone/i).fill('1234567890');
+    await page.getByLabel(/Subject/i).fill('Testing contact form');
+
+    await page.getByRole('button', { name: /Submit/i }).click();
+  });
 });

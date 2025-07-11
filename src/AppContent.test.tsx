@@ -17,6 +17,7 @@ describe('AppContent', () => {
           <Routes>
             <Route path="/" element={<AppContent />} />
             <Route path="/about" element={<div>About Page</div>} />
+            <Route path="/contact" element={<div>Contact Page</div>} /> {/* Added */}
           </Routes>
         </MemoryRouter>
       </ChartProvider>,
@@ -80,6 +81,17 @@ describe('AppContent', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/About Page/i)).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to Contact page when Contact Us button is clicked', async () => {
+    renderWithRouter();
+
+    const contactBtn = screen.getByRole('button', { name: /Contact Us/i });
+    fireEvent.click(contactBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Contact Page/i)).toBeInTheDocument();
     });
   });
 });

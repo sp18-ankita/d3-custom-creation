@@ -169,6 +169,24 @@ export const AppContent: React.FC = () => {
         >
           About App
         </button>
+        <button
+          onClick={() => navigate('/contact')}
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 140, // Adjust this to avoid overlap with About button
+            backgroundColor: '#28a745',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '10px 20px',
+            fontSize: '16px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            cursor: 'pointer',
+          }}
+        >
+          Contact Us
+        </button>
       </div>
     </div>
   );
