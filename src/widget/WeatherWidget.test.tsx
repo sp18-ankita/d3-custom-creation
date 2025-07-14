@@ -56,7 +56,7 @@ describe('WeatherWidget', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockedAxios.get = vi.fn().mockRejectedValue(new Error('API Error'));
 
     const { container } = render(<WeatherWidget />);

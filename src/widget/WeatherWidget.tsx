@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
@@ -36,7 +35,6 @@ export const WeatherWidget: React.FC = () => {
   }, []);
 
   if (!weather) return null;
-
 
   return (
     <div
