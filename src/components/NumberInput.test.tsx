@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { NumberInput } from '../components/NumberInput';
+import { NumberInput } from './NumberInput/NumberInput';
 
 describe('NumberInput', () => {
   it('renders the label and input with initial value', () => {

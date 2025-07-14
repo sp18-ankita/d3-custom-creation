@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { GenericChartRenderer } from '../components/ChartRenderer';
 import type { ChartType, DataPoint } from '../enums/ChartType';
+import { GenericChartRenderer } from './ChartRenderer/ChartRenderer';
 
 vi.mock('../config/ChartConfig', async () => {
   return {

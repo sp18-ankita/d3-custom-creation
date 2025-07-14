@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { GenericChartRenderer } from '../components/ChartRenderer';
+import { GenericChartRenderer } from '../components/ChartRenderer/ChartRenderer';
 import type { DataPoint } from '../enums/ChartType';
 
 vi.mock('../components/charts/Barchart', () => ({

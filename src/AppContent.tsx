@@ -4,7 +4,7 @@ import './App.css';
 
 import type { DataPoint } from './enums/ChartType';
 
-import { GenericChartRenderer } from './components/ChartRenderer';
+import { GenericChartRenderer } from './components/ChartRenderer/ChartRenderer';
 import { Speedometer } from './components/charts/Speedometer';
 import { ChartTypeSelector } from './components/ChartTypeSelector';
 import { JsonInput } from './components/JsonInput';
