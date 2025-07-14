@@ -3,7 +3,7 @@ import './App.css';
 
 import type { ChartType, DataPoint, Zone } from './enums/ChartType';
 
-import { GenericChartRenderer } from './components/ChartRenderer';
+import { GenericChartRenderer } from './components/ChartRenderer/ChartRenderer';
 import { Speedometer } from './components/charts/Speedometer';
 import { ChartTypeSelector } from './components/ChartTypeSelector';
 import { JsonInput } from './components/JsonInput';
@@ -15,9 +15,9 @@ const DEFAULT_DATA: DataPoint[] = [
 ];
 
 const DEFAULT_ZONES: Zone[] = [
-  { from: 0, to: 30, color: '#4caf50' },
-  { from: 30, to: 70, color: '#ffeb3b' },
-  { from: 70, to: 100, color: '#f44336' },
+  { from: 0, to: 60, color: '#4caf50' },
+  { from: 60, to: 120, color: '#ffeb3b' },
+  { from: 120, to: 180, color: '#f44336' },
 ];
 
 export const App: React.FC = () => {
@@ -132,7 +132,7 @@ export const App: React.FC = () => {
                 width={400}
                 height={220}
                 startAngle={-180}
-                endAngle={180}
+                endAngle={0}
               />
             ) : (
               <p style={{ color: 'red' }}>

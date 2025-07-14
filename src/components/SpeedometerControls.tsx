@@ -1,6 +1,6 @@
 import React from 'react';
 import { JsonInput } from './JsonInput';
-import { NumberInput } from './NumberInput';
+import { NumberInput } from './NumberInput/NumberInput';
 
 type SpeedometerControlsProps = {
   value: string;

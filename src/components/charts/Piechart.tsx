@@ -17,6 +17,15 @@ export const PieChart = ({ data }: { data: DataPoint[] }) => {
       .append('path')
       .attr('d', arc)
       .attr('fill', (_, i) => d3.schemeCategory10[i % 10]);
+
+    g.selectAll('text')
+      .data(pie)
+      .enter()
+      .append('text')
+      .attr('transform', d => `translate(${arc.centroid(d)})`)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 12)
+      .text(d => d.data.label);
   });
 
   return <svg ref={ref} width={400} height={300}></svg>;
