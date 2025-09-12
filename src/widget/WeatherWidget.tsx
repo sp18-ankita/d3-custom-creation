@@ -1,40 +1,17 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-
-interface WeatherData {
-  temp: number;
-  description: string;
-  city: string;
-  icon: string;
-}
+import React, { useEffect } from 'react';
+import { useWeatherAPI } from '../services/weatherService';
 
 export const WeatherWidget: React.FC = () => {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const { fetchWeather, data: weather, loading, error } = useWeatherAPI();
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-        const city = 'Bhubaneshwar';
-        const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
-        const response = await axios.get(url);
-        const data = response.data;
+    fetchWeather('Bhubaneshwar').catch(err => {
+      console.error('Weather fetch error:', err);
+    });
+  }, [fetchWeather]);
 
-        setWeather({
-          temp: data.main.temp,
-          description: data.weather[0].description,
-          city: data.name,
-          icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
-        });
-      } catch (error) {
-        console.error('Weather API error:', error);
-      }
-    };
-
-    fetchWeather();
-  }, []);
-
-  if (!weather) return null;
+  // Don't render anything while loading or if there's an error
+  if (loading || error || !weather) return null;
 
   return (
     <div
