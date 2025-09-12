@@ -30,3 +30,6 @@ coverage/
 *.lcov
 
 test-results
+
+# Generated documentation
+contacts-api/docs/

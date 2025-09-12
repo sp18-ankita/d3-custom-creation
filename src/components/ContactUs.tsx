@@ -29,15 +29,17 @@ const ContactForm: React.FC = () => {
 
   useEffect(() => {
     if (isEdit) {
-      const existing = getContactById(id!);
-      if (existing) {
-        const { id, ...rest } = existing;
-        console.log({ id });
-        setFormData(rest);
-      } else {
-        alert('Contact not found!');
-        navigate('/contacts');
-      }
+      (async () => {
+        const existing = await getContactById(id!);
+        if (existing) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: contactId, ...rest } = existing;
+          setFormData(rest);
+        } else {
+          alert('Contact not found!');
+          navigate('/contacts/new');
+        }
+      })();
     }
   }, [id, isEdit, navigate]);
 
@@ -63,11 +65,16 @@ const ContactForm: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const result = isEdit ? updateContact(id!, formData) : addContact(formData);
+    let result: Contact | null = null;
+    if (isEdit) {
+      result = await updateContact(id!, formData);
+    } else {
+      result = await addContact(formData);
+    }
 
     if (!result) {
       setErrors({ email: 'Email must be unique' });

@@ -1,4 +1,5 @@
-// src/services/contactService.ts
+// GraphQL endpoint
+const GRAPHQL_URL = 'http://localhost:4001/graphql';
 
 export interface Contact {
   id: string;
@@ -10,64 +11,118 @@ export interface Contact {
   consent: boolean;
 }
 
-const STORAGE_KEY = 'contacts';
+export interface ContactsFilter {
+  name?: string;
+  email?: string;
+  phone?: string;
+  subject?: string;
+  message?: string;
+  consent?: boolean;
+}
 
-const generateId = () => '_' + Math.random().toString(36).substring(2, 9);
+export interface ContactsSort {
+  field: 'name' | 'email' | 'phone' | 'subject' | 'message' | 'consent';
+  order: 'ASC' | 'DESC';
+}
 
-const getStoredContacts = (): Contact[] => {
-  try {
-    const json = localStorage.getItem(STORAGE_KEY);
-    return json ? JSON.parse(json) : [];
-  } catch (e) {
-    console.error('Error reading contacts from localStorage', e);
-    return [];
-  }
-};
+export interface ContactsPagination {
+  page: number;
+  limit: number;
+}
 
-const saveToStorage = (contacts: Contact[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
-};
+export interface ContactsResponse {
+  contacts: Contact[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-export const getContacts = (): Contact[] => {
-  return getStoredContacts();
-};
+type ContactInput = Omit<Contact, 'id'>;
 
-export const getContactById = (id: string): Contact | undefined => {
-  return getStoredContacts().find(c => c.id === id);
-};
-
-export const addContact = (data: Omit<Contact, 'id'>): Contact | null => {
-  const contacts = getStoredContacts();
-  if (contacts.some(c => c.email === data.email)) {
-    console.warn('Email already exists.');
-    return null;
-  }
-  const newContact: Contact = { id: generateId(), ...data };
-  saveToStorage([...contacts, newContact]);
-  return newContact;
-};
-
-export const updateContact = (id: string, updated: Omit<Contact, 'id'>): Contact | null => {
-  const contacts = getStoredContacts();
-  if (contacts.some(c => c.id !== id && c.email === updated.email)) {
-    console.warn('Another contact with this email already exists.');
-    return null;
-  }
-
-  let updatedContact: Contact | null = null;
-  const updatedContacts = contacts.map(c => {
-    if (c.id === id) {
-      updatedContact = { id, ...updated };
-      return updatedContact;
-    }
-    return c;
+async function graphqlRequest<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  const res = await fetch(GRAPHQL_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
   });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || 'GraphQL error');
+  return json.data;
+}
 
-  saveToStorage(updatedContacts);
-  return updatedContact;
+export const getContacts = async (
+  filter?: ContactsFilter,
+  sort?: ContactsSort,
+  pagination?: ContactsPagination,
+): Promise<ContactsResponse> => {
+  const query = `
+    query GetContacts($filter: ContactsFilter, $sort: ContactsSort, $pagination: ContactsPagination) {
+      contacts(filter: $filter, sort: $sort, pagination: $pagination) {
+        contacts {
+          id
+          name
+          email
+          phone
+          subject
+          message
+          consent
+        }
+        total
+        page
+        limit
+        totalPages
+      }
+    }
+  `;
+
+  const variables: Record<string, unknown> = {};
+  if (filter) variables.filter = filter;
+  if (sort) variables.sort = sort;
+  if (pagination) variables.pagination = pagination;
+
+  const data = await graphqlRequest<{ contacts: ContactsResponse }>(query, variables);
+  return data.contacts;
 };
 
-export const deleteContact = (id: string): void => {
-  const contacts = getStoredContacts();
-  saveToStorage(contacts.filter(c => c.id !== id));
+// Keep backward compatibility
+export const getAllContacts = async (): Promise<Contact[]> => {
+  const response = await getContacts();
+  return response.contacts;
+};
+
+export const getContactById = async (id: string): Promise<Contact | undefined> => {
+  const query = `query ($id: ID!) { contact(id: $id) { id name email phone subject message consent } }`;
+  const data = await graphqlRequest<{ contact: Contact | null }>(query, { id });
+  return data.contact || undefined;
+};
+
+export const addContact = async (input: ContactInput): Promise<Contact | null> => {
+  const mutation = `mutation ($input: ContactInput!) { addContact(input: $input) { id name email phone subject message consent } }`;
+  try {
+    const data = await graphqlRequest<{ addContact: Contact }>(mutation, { input });
+    return data.addContact;
+  } catch (e: unknown) {
+    const error = e as Error;
+    if (error.message.includes('Email already exists')) return null;
+    throw e;
+  }
+};
+
+export const updateContact = async (id: string, input: ContactInput): Promise<Contact | null> => {
+  const mutation = `mutation ($id: ID!, $input: ContactInput!) { updateContact(id: $id, input: $input) { id name email phone subject message consent } }`;
+  try {
+    const data = await graphqlRequest<{ updateContact: Contact }>(mutation, { id, input });
+    return data.updateContact;
+  } catch (e: unknown) {
+    const error = e as Error;
+    if (error.message.includes('Another contact with this email already exists')) return null;
+    throw e;
+  }
+};
+
+export const deleteContact = async (id: string): Promise<boolean> => {
+  const mutation = `mutation ($id: ID!) { deleteContact(id: $id) }`;
+  const data = await graphqlRequest<{ deleteContact: boolean }>(mutation, { id });
+  return data.deleteContact;
 };

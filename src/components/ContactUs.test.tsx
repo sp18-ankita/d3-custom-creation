@@ -49,7 +49,7 @@ describe('ContactForm', () => {
   });
 
   test('submits form and shows thank you message', async () => {
-    mockedService.addContact.mockReturnValue({
+    mockedService.addContact.mockResolvedValue({
       id: '1',
       name: 'Jane',
       email: 'jane@example.com',
@@ -74,7 +74,7 @@ describe('ContactForm', () => {
   });
 
   test('shows error if email already exists', async () => {
-    mockedService.addContact.mockReturnValue(null); // simulate duplicate
+    mockedService.addContact.mockResolvedValue(null); // simulate duplicate
 
     renderForm();
 
@@ -89,7 +89,7 @@ describe('ContactForm', () => {
   });
 
   test('loads existing contact in edit mode and updates', async () => {
-    mockedService.getContactById.mockReturnValue({
+    mockedService.getContactById.mockResolvedValue({
       id: '1',
       name: 'John',
       email: 'john@example.com',
@@ -99,7 +99,7 @@ describe('ContactForm', () => {
       consent: true,
     });
 
-    mockedService.updateContact.mockReturnValue({
+    mockedService.updateContact.mockResolvedValue({
       id: '1',
       name: 'John',
       email: 'john@example.com',

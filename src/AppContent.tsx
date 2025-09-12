@@ -170,7 +170,7 @@ export const AppContent: React.FC = () => {
           About App
         </button>
         <button
-          onClick={() => navigate('/contact')}
+          onClick={() => navigate('/contacts/new')}
           style={{
             position: 'fixed',
             bottom: 20,
