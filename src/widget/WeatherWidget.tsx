@@ -8,7 +8,7 @@ export const WeatherWidget: React.FC = () => {
     fetchWeather('Bhubaneshwar').catch(err => {
       console.error('Weather fetch error:', err);
     });
-  }, []); // Empty dependency array - only run once on mount
+  }, [fetchWeather]); // Include fetchWeather in dependency array
 
   // Don't render anything while loading or if there's an error
   if (loading || error || !weather) return null;
