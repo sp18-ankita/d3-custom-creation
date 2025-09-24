@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useDataFetcher } from '../hooks/useDataFetcher';
 
 // Weather data interfaces
@@ -20,35 +21,38 @@ interface OpenWeatherAPIResponse {
 export const useWeatherAPI = () => {
   const fetcher = useDataFetcher<WeatherData>();
 
-  const fetchWeather = async (city = 'Bhubaneshwar'): Promise<WeatherData | null> => {
-    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-    const baseUrl = import.meta.env.VITE_WEATHER_API_URL;
+  const fetchWeather = useCallback(
+    async (city = 'Bhubaneshwar'): Promise<WeatherData | null> => {
+      const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
+      const baseUrl = import.meta.env.VITE_WEATHER_API_URL;
 
-    if (!apiKey || !baseUrl) {
-      console.error('Weather API configuration missing');
-      return null;
-    }
+      if (!apiKey || !baseUrl) {
+        console.error('Weather API configuration missing');
+        return null;
+      }
 
-    const params = {
-      q: city,
-      units: 'metric',
-      appid: apiKey,
-    };
-
-    const response = await fetcher.get(baseUrl, params);
-
-    if (response) {
-      const data = response as unknown as OpenWeatherAPIResponse;
-      return {
-        temp: data.main.temp,
-        description: data.weather[0].description,
-        city: data.name,
-        icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
+      const params = {
+        q: city,
+        units: 'metric',
+        appid: apiKey,
       };
-    }
 
-    return null;
-  };
+      const response = await fetcher.get(baseUrl, params);
+
+      if (response) {
+        const data = response as unknown as OpenWeatherAPIResponse;
+        return {
+          temp: data.main.temp,
+          description: data.weather[0].description,
+          city: data.name,
+          icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
+        };
+      }
+
+      return null;
+    },
+    [fetcher],
+  );
 
   return {
     fetchWeather,
