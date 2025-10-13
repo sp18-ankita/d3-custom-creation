@@ -1,4 +1,5 @@
 // import axios from 'axios';
+import { useDataFetcher } from '../hooks/useDataFetcher';
 import { cacheService, contactsCache } from './cacheService';
 
 // Types
@@ -307,6 +308,42 @@ export const resetContactsData = (): void => {
 // Aliases for backward compatibility
 export const addContact = createContact;
 export const getContactById = getContact;
+
+/**
+ * Hook for using contacts API with data fetching capabilities
+ */
+export const useContactsAPI = () => {
+  const fetcher = useDataFetcher<ContactsResponse | Contact>({
+    cache: true,
+    cacheConfig: {
+      ttl: 5 * 60 * 1000, // 5 minutes cache
+      storage: 'localStorage',
+    },
+  });
+
+  return {
+    ...fetcher,
+    getContacts: async (
+      filter?: ContactsFilter,
+      sort?: ContactsSort,
+      pagination?: ContactsPagination,
+    ) => {
+      return getContacts(filter, sort, pagination);
+    },
+    addContact: async (contactData: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>) => {
+      return createContact(contactData);
+    },
+    getContactById: async (id: string) => {
+      return getContact(id);
+    },
+    updateContact: async (id: string, contactData: Partial<Omit<Contact, 'id' | 'createdAt'>>) => {
+      return updateContact(id, contactData);
+    },
+    deleteContact: async (id: string) => {
+      return deleteContact(id);
+    },
+  };
+};
 
 export default {
   getContacts,

@@ -65,8 +65,8 @@ async function start() {
   });
 
   // Optional fallback error handler
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
       console.error('Unhandled error:', err);
       Sentry.captureException(err);
