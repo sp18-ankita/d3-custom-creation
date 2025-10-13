@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import AppContent from './AppContent';
 import ContactList from './components/ContactList';
 import ContactForm from './components/ContactUs';
+import NotFoundPage from './components/NotFoundPage';
 import About from './pages/About';
 
 const AppRoutes: React.FC = () => (
@@ -14,14 +15,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/contacts" element={<ContactList />} />
     <Route path="/contacts/new" element={<ContactForm />} />
     <Route path="/contacts/:id" element={<ContactForm />} />
-    <Route
-      path="*"
-      element={
-        <div style={{ padding: 20 }}>
-          <h2>404 - Page Not Found</h2>
-        </div>
-      }
-    />
+    <Route path="*" element={<NotFoundPage />} />
   </Routes>
 );
 

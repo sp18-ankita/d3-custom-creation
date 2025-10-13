@@ -1,6 +1,17 @@
 import React, { useEffect } from 'react';
 import { useWeatherAPI } from '../services/weatherService';
 
+/**
+ * WeatherWidget component - currently disabled to prevent multiple API calls
+ *
+ * This widget fetches weather data from OpenWeatherMap API and displays it.
+ * It has been temporarily commented out in AppContent.tsx and About.tsx
+ * to prevent multiple simultaneous API calls.
+ *
+ * To re-enable:
+ * 1. Uncomment the import and usage in either AppContent.tsx OR About.tsx (not both)
+ * 2. Ensure you have valid VITE_WEATHER_API_KEY and VITE_WEATHER_API_URL in your .env
+ */
 export const WeatherWidget: React.FC = () => {
   const { fetchWeather, data: weather, loading, error } = useWeatherAPI();
 
@@ -8,7 +19,8 @@ export const WeatherWidget: React.FC = () => {
     fetchWeather('Bhubaneshwar').catch(err => {
       console.error('Weather fetch error:', err);
     });
-  }, [fetchWeather]); // Include fetchWeather in dependency array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only once on mount
 
   // Don't render anything while loading or if there's an error
   if (loading || error || !weather) return null;

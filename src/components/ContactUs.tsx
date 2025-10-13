@@ -9,6 +9,7 @@ import {
   updateContact,
   type Contact,
 } from '../services/contactServices';
+import ContactFormSkeleton from './Skeleton/ContactFormSkeleton';
 
 const initialState: Omit<Contact, 'id'> = {
   name: '',
@@ -25,19 +26,29 @@ const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isEdit = !!id;
 
   useEffect(() => {
     if (isEdit) {
+      setLoading(true);
       (async () => {
-        const existing = await getContactById(id!);
-        if (existing) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { id: contactId, ...rest } = existing;
-          setFormData(rest);
-        } else {
-          alert('Contact not found!');
+        try {
+          const existing = await getContactById(id!);
+          if (existing) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id: contactId, ...rest } = existing;
+            setFormData(rest);
+          } else {
+            alert('Contact not found!');
+            navigate('/contacts/new');
+          }
+        } catch (error) {
+          console.error('Error loading contact:', error);
+          alert('Error loading contact!');
           navigate('/contacts/new');
+        } finally {
+          setLoading(false);
         }
       })();
     }
@@ -69,20 +80,28 @@ const ContactForm: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
 
-    let result: Contact | null = null;
-    if (isEdit) {
-      result = await updateContact(id!, formData);
-    } else {
-      result = await addContact(formData);
-    }
+    setLoading(true);
+    try {
+      let result: Contact | null = null;
+      if (isEdit) {
+        result = await updateContact(id!, formData);
+      } else {
+        result = await addContact(formData);
+      }
 
-    if (!result) {
-      setErrors({ email: 'Email must be unique' });
-      return;
-    }
+      if (!result) {
+        setErrors({ email: 'Email must be unique' });
+        return;
+      }
 
-    setSubmitted(true);
-    setTimeout(() => navigate('/contacts'), 1200);
+      setSubmitted(true);
+      setTimeout(() => navigate('/contacts'), 1200);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setErrors({ submit: 'An error occurred while submitting the form' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -92,6 +111,10 @@ const ContactForm: React.FC = () => {
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
   };
+
+  if (loading) {
+    return <ContactFormSkeleton />;
+  }
 
   if (submitted) {
     return (
@@ -157,8 +180,8 @@ const ContactForm: React.FC = () => {
         {errors.consent && <p className="error-text">{errors.consent}</p>}
       </div>
 
-      <button type="submit" className="submit-button">
-        {isEdit ? 'Update Contact' : 'Submit Message'}
+      <button type="submit" className="submit-button" disabled={loading}>
+        {loading ? 'Submitting...' : isEdit ? 'Update Contact' : 'Submit Message'}
       </button>
     </form>
   );

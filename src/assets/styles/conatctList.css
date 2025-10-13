@@ -109,6 +109,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-align: left;
 }
 
 .clear-filters-btn {
@@ -148,6 +149,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #4a5568;
+  text-align: left;
 }
 
 .input-wrapper,
@@ -387,6 +389,8 @@
 .name-cell .cell-content {
   font-weight: 600;
   color: #2d3748;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .email-link,

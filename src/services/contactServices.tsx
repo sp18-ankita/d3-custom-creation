@@ -1,4 +1,5 @@
 // import axios from 'axios';
+import { cacheService, contactsCache } from './cacheService';
 
 // Types
 export interface Contact {
@@ -145,6 +146,22 @@ export const getContacts = async (
   pagination: ContactsPagination = { page: 1, limit: 10 },
 ): Promise<ContactsResponse> => {
   try {
+    // Create a cache key based on parameters
+    const cacheKey = cacheService.createKey(
+      'contacts',
+      JSON.stringify(filter),
+      sort.field,
+      sort.order,
+      pagination.page,
+      pagination.limit,
+    );
+
+    // Try to get from cache first
+    const cachedResult = contactsCache.get(cacheKey) as ContactsResponse | null;
+    if (cachedResult) {
+      return cachedResult;
+    }
+
     // In a real application, you would make an API call here
     // For now, we'll use mock data with client-side filtering
 
@@ -164,13 +181,18 @@ export const getContacts = async (
     // Apply pagination
     const contacts = applyPagination(filteredContacts, pagination);
 
-    return {
+    const result = {
       contacts,
       total,
       page: pagination.page,
       limit: pagination.limit,
       totalPages,
     };
+
+    // Cache the result
+    contactsCache.set(cacheKey, result);
+
+    return result;
   } catch (error) {
     console.error('Error fetching contacts:', error);
     throw new Error('Failed to fetch contacts');
@@ -179,6 +201,13 @@ export const getContacts = async (
 
 export const getContact = async (id: string): Promise<Contact> => {
   try {
+    // Check cache first
+    const cacheKey = `contact_${id}`;
+    const cachedContact = contactsCache.get(cacheKey) as Contact | null;
+    if (cachedContact) {
+      return cachedContact;
+    }
+
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 200));
 
@@ -186,6 +215,9 @@ export const getContact = async (id: string): Promise<Contact> => {
     if (!contact) {
       throw new Error('Contact not found');
     }
+
+    // Cache the contact
+    contactsCache.set(cacheKey, contact);
 
     return contact;
   } catch (error) {
@@ -209,6 +241,13 @@ export const createContact = async (
     };
 
     contactsData.push(newContact);
+
+    // Cache the new contact
+    contactsCache.set(`contact_${newContact.id}`, newContact);
+
+    // Clear contacts list cache to force refresh
+    contactsCache.clear();
+
     return newContact;
   } catch (error) {
     console.error('Error creating contact:', error);

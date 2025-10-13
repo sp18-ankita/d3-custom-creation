@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react';
+import type { CacheConfig } from '../services/cacheService';
+import { cacheService } from '../services/cacheService';
 
 // Custom error class for better error handling
 class ApiError extends Error {
@@ -49,11 +51,15 @@ interface UseDataFetcherOptions {
   onSuccess?: <T>(data: T) => void;
   retryAttempts?: number;
   retryDelay?: number;
+  // Caching options
+  cache?: boolean;
+  cacheConfig?: CacheConfig;
+  cacheKey?: string;
 }
 
 /**
  * A comprehensive data fetching hook that supports both GraphQL and REST APIs
- * with built-in loading states, error handling, and retry logic
+ * with built-in loading states, error handling, retry logic, and caching
  */
 export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {}) => {
   const {
@@ -63,6 +69,9 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     onSuccess,
     retryAttempts = 0,
     retryDelay = 1000,
+    cache = false,
+    cacheConfig = { ttl: 5 * 60 * 1000, storage: 'memory' }, // Default: 5 minutes in memory
+    cacheKey,
   } = options;
 
   const [state, setState] = useState<DataState<T>>({
@@ -81,6 +90,31 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     });
     return url.toString();
   };
+
+  // Helper function to generate cache key from request config
+  const generateCacheKey = useCallback(
+    (requestConfig: RequestConfig, customKey?: string): string => {
+      if (customKey) return customKey;
+
+      if (requestConfig.type === 'graphql') {
+        return cacheService.createKey(
+          'graphql',
+          requestConfig.config.endpoint || defaultGraphQLEndpoint,
+          requestConfig.config.query,
+          JSON.stringify(requestConfig.config.variables || {}),
+        );
+      } else {
+        const { url, method = 'GET', params, body } = requestConfig.config;
+        return cacheService.createKey(
+          'rest',
+          method,
+          buildUrl(url, params),
+          body ? JSON.stringify(body) : '',
+        );
+      }
+    },
+    [defaultGraphQLEndpoint],
+  );
 
   // Helper function to handle GraphQL requests
   const executeGraphQLRequest = useCallback(
@@ -172,15 +206,41 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     [executeGraphQLRequest, executeRestRequest, retryAttempts, retryDelay],
   );
 
-  // Main fetch function
+  // Main fetch function with caching support
   const execute = useCallback(
-    async (requestConfig: RequestConfig): Promise<T | null> => {
+    async (
+      requestConfig: RequestConfig,
+      useCache = cache,
+      customCacheKey?: string,
+    ): Promise<T | null> => {
+      const requestCacheKey =
+        customCacheKey || cacheKey || (useCache ? generateCacheKey(requestConfig) : null);
+
+      // Try to get from cache first if caching is enabled
+      if (useCache && requestCacheKey) {
+        const cachedData = cacheService.get<T>(requestCacheKey, cacheConfig.storage);
+        if (cachedData !== null) {
+          setState(prev => ({ ...prev, data: cachedData, loading: false, error: null }));
+
+          if (onSuccess) {
+            onSuccess(cachedData);
+          }
+
+          return cachedData;
+        }
+      }
+
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
         const data = await executeWithRetry(requestConfig);
 
         setState(prev => ({ ...prev, data, loading: false, error: null }));
+
+        // Cache the result if caching is enabled
+        if (useCache && requestCacheKey && data !== null) {
+          cacheService.set(requestCacheKey, data, cacheConfig);
+        }
 
         if (onSuccess) {
           onSuccess(data);
@@ -204,56 +264,85 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
         return null;
       }
     },
-    [executeWithRetry, onSuccess, onError],
+    [executeWithRetry, onSuccess, onError, cache, cacheKey, cacheConfig, generateCacheKey],
   );
 
   // Convenience methods
   const graphql = useCallback(
-    (config: GraphQLConfig) => {
-      return execute({ type: 'graphql', config });
+    (config: GraphQLConfig, useCache?: boolean, customCacheKey?: string) => {
+      return execute({ type: 'graphql', config }, useCache, customCacheKey);
     },
     [execute],
   );
 
   const rest = useCallback(
-    (config: RestConfig) => {
-      return execute({ type: 'rest', config });
+    (config: RestConfig, useCache?: boolean, customCacheKey?: string) => {
+      return execute({ type: 'rest', config }, useCache, customCacheKey);
     },
     [execute],
   );
 
   // HTTP method shortcuts for REST
   const get = useCallback(
-    (url: string, params?: Record<string, string>, headers?: Record<string, string>) => {
-      return rest({ url, method: 'GET', params, headers });
+    (
+      url: string,
+      params?: Record<string, string>,
+      headers?: Record<string, string>,
+      useCache?: boolean,
+      customCacheKey?: string,
+    ) => {
+      return rest({ url, method: 'GET', params, headers }, useCache, customCacheKey);
     },
     [rest],
   );
 
   const post = useCallback(
-    (url: string, body?: unknown, headers?: Record<string, string>) => {
-      return rest({ url, method: 'POST', body, headers });
+    (
+      url: string,
+      body?: unknown,
+      headers?: Record<string, string>,
+      useCache?: boolean,
+      customCacheKey?: string,
+    ) => {
+      return rest({ url, method: 'POST', body, headers }, useCache, customCacheKey);
     },
     [rest],
   );
 
   const put = useCallback(
-    (url: string, body?: unknown, headers?: Record<string, string>) => {
-      return rest({ url, method: 'PUT', body, headers });
+    (
+      url: string,
+      body?: unknown,
+      headers?: Record<string, string>,
+      useCache?: boolean,
+      customCacheKey?: string,
+    ) => {
+      return rest({ url, method: 'PUT', body, headers }, useCache, customCacheKey);
     },
     [rest],
   );
 
   const del = useCallback(
-    (url: string, headers?: Record<string, string>) => {
-      return rest({ url, method: 'DELETE', headers });
+    (
+      url: string,
+      headers?: Record<string, string>,
+      useCache?: boolean,
+      customCacheKey?: string,
+    ) => {
+      return rest({ url, method: 'DELETE', headers }, useCache, customCacheKey);
     },
     [rest],
   );
 
   const patch = useCallback(
-    (url: string, body?: unknown, headers?: Record<string, string>) => {
-      return rest({ url, method: 'PATCH', body, headers });
+    (
+      url: string,
+      body?: unknown,
+      headers?: Record<string, string>,
+      useCache?: boolean,
+      customCacheKey?: string,
+    ) => {
+      return rest({ url, method: 'PATCH', body, headers }, useCache, customCacheKey);
     },
     [rest],
   );
@@ -262,6 +351,41 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
   const reset = useCallback(() => {
     setState({ data: null, loading: false, error: null });
   }, []);
+
+  // Cache management functions
+  const invalidateCache = useCallback(
+    (key?: string) => {
+      if (key) {
+        cacheService.delete(key, cacheConfig.storage);
+      } else if (cacheKey) {
+        cacheService.delete(cacheKey, cacheConfig.storage);
+      }
+    },
+    [cacheKey, cacheConfig.storage],
+  );
+
+  const clearAllCache = useCallback(() => {
+    cacheService.clear(cacheConfig.storage);
+  }, [cacheConfig.storage]);
+
+  const getCacheStats = useCallback(() => {
+    return cacheService.getStats();
+  }, []);
+
+  const refreshFromCache = useCallback(
+    (key?: string) => {
+      const keyToUse = key || cacheKey;
+      if (keyToUse) {
+        const cachedData = cacheService.get<T>(keyToUse, cacheConfig.storage);
+        if (cachedData !== null) {
+          setState(prev => ({ ...prev, data: cachedData, loading: false, error: null }));
+          return cachedData;
+        }
+      }
+      return null;
+    },
+    [cacheKey, cacheConfig.storage],
+  );
 
   return {
     ...state,
@@ -274,6 +398,11 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     delete: del,
     patch,
     reset,
+    // Cache management methods
+    invalidateCache,
+    clearAllCache,
+    getCacheStats,
+    refreshFromCache,
   };
 };
 

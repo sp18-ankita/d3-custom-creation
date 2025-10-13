@@ -11,7 +11,7 @@ import { JsonInput } from './components/JsonInput';
 import SentryTest from './components/SentryTest';
 import { SpeedometerControls } from './components/SpeedometerControls';
 import { useChartContext } from './hooks/useChartContext';
-import { WeatherWidget } from './widget/WeatherWidget';
+// import { WeatherWidget } from './widget/WeatherWidget'; // Commented out to prevent multiple API calls
 
 const DEFAULT_DATA: DataPoint[] = [
   { label: 'A', value: 30 },
@@ -89,7 +89,7 @@ export const AppContent: React.FC = () => {
 
   return (
     <div>
-      <WeatherWidget />
+      {/* <WeatherWidget /> */} {/* Commented out to prevent multiple API calls */}
       <SentryTest />
       <div
         className="app-container"

@@ -16,10 +16,16 @@ interface OpenWeatherAPIResponse {
 }
 
 /**
- * Hook for fetching weather data using the OpenWeather API
+ * Hook for fetching weather data using the OpenWeather API with caching
  */
 export const useWeatherAPI = () => {
-  const fetcher = useDataFetcher<WeatherData>();
+  const fetcher = useDataFetcher<WeatherData>({
+    cache: true,
+    cacheConfig: {
+      ttl: 10 * 60 * 1000, // 10 minutes cache
+      storage: 'sessionStorage',
+    },
+  });
 
   const fetchWeather = useCallback(
     async (city = 'Bhubaneshwar'): Promise<WeatherData | null> => {
@@ -37,7 +43,14 @@ export const useWeatherAPI = () => {
         appid: apiKey,
       };
 
-      const response = await fetcher.get(baseUrl, params);
+      // Use caching with a custom cache key based on city
+      const response = await fetcher.get(
+        baseUrl,
+        params,
+        undefined, // headers
+        true, // use cache
+        `weather_${city.toLowerCase()}`, // custom cache key
+      );
 
       if (response) {
         const data = response as unknown as OpenWeatherAPIResponse;

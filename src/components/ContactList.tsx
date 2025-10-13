@@ -9,6 +9,7 @@ import {
   type ContactsResponse,
   type ContactsSort,
 } from '../services/contactServices';
+import ContactListSkeleton from './Skeleton/ContactListSkeleton';
 
 const ContactList: React.FC = () => {
   const [contactsData, setContactsData] = useState<ContactsResponse>({
@@ -21,7 +22,8 @@ const ContactList: React.FC = () => {
   const [filter, setFilter] = useState<ContactsFilter>({});
   const [sort, setSort] = useState<ContactsSort>({ field: 'name', order: 'ASC' });
   const [pagination, setPagination] = useState<ContactsPagination>({ page: 1, limit: 10 });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
+  const [initialLoad, setInitialLoad] = useState(true); // Track initial load
 
   const navigate = useNavigate();
 
@@ -34,6 +36,7 @@ const ContactList: React.FC = () => {
       console.error('Error loading contacts:', error);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   }, [filter, sort, pagination]);
 
@@ -139,7 +142,6 @@ const ContactList: React.FC = () => {
     return (
       <div className="pagination-container">
         <div className="pagination-info">
-          <span className="icon">📄</span>
           Page {page} of {totalPages}
         </div>
         <div className="pagination">
@@ -192,14 +194,16 @@ const ContactList: React.FC = () => {
 
   const hasActiveFilters = Object.keys(filter).length > 0;
 
+  // Show full skeleton on initial load
+  if (initialLoad && loading) {
+    return <ContactListSkeleton rows={10} />;
+  }
+
   return (
     <div className="contact-list-page">
       <div className="page-header">
         <div className="header-content">
-          <h1 className="page-title">
-            <span className="title-icon">�</span>
-            Contact Management
-          </h1>
+          <h1 className="page-title">Contact Management</h1>
           <div className="header-stats">
             <div className="stat-card">
               <span className="stat-number">{contactsData.total}</span>
@@ -217,17 +221,13 @@ const ContactList: React.FC = () => {
         {/* Enhanced Filters Section */}
         <div className="filters-section">
           <div className="filters-header">
-            <h3 className="filters-title">
-              <span className="icon">🔍</span>
-              Search & Filter
-            </h3>
+            <h3 className="filters-title">Search & Filter</h3>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
                 className="clear-filters-btn"
                 title="Clear all filters"
               >
-                <span className="icon">✖</span>
                 Clear Filters
               </button>
             )}
@@ -237,7 +237,6 @@ const ContactList: React.FC = () => {
             <div className="filter-group">
               <label className="filter-label">Name</label>
               <div className="input-wrapper">
-                <span className="input-icon">👤</span>
                 <input
                   type="text"
                   placeholder="Search by name..."
@@ -251,7 +250,6 @@ const ContactList: React.FC = () => {
             <div className="filter-group">
               <label className="filter-label">Email</label>
               <div className="input-wrapper">
-                <span className="input-icon">📧</span>
                 <input
                   type="text"
                   placeholder="Search by email..."
@@ -265,7 +263,6 @@ const ContactList: React.FC = () => {
             <div className="filter-group">
               <label className="filter-label">Phone</label>
               <div className="input-wrapper">
-                <span className="input-icon">📱</span>
                 <input
                   type="text"
                   placeholder="Search by phone..."
@@ -279,7 +276,6 @@ const ContactList: React.FC = () => {
             <div className="filter-group">
               <label className="filter-label">Subject</label>
               <div className="input-wrapper">
-                <span className="input-icon">📝</span>
                 <input
                   type="text"
                   placeholder="Search by subject..."
@@ -293,7 +289,6 @@ const ContactList: React.FC = () => {
             <div className="filter-group">
               <label className="filter-label">Consent Status</label>
               <div className="select-wrapper">
-                <span className="input-icon">✅</span>
                 <select
                   value={filter.consent !== undefined ? filter.consent.toString() : ''}
                   onChange={e => {
@@ -307,8 +302,8 @@ const ContactList: React.FC = () => {
                   className="filter-select"
                 >
                   <option value="">All Statuses</option>
-                  <option value="true">✓ Consented</option>
-                  <option value="false">✗ Not Consented</option>
+                  <option value="true">Consented</option>
+                  <option value="false">Not Consented</option>
                 </select>
               </div>
             </div>
@@ -319,10 +314,7 @@ const ContactList: React.FC = () => {
         <div className="controls-section">
           <div className="sort-controls">
             <div className="control-group">
-              <label className="control-label">
-                <span className="icon">🔄</span>
-                Sort by
-              </label>
+              <label className="control-label">Sort by</label>
               <div className="sort-wrapper">
                 <select
                   value={sort.field}
@@ -341,9 +333,9 @@ const ContactList: React.FC = () => {
                   title={`Sort ${sort.order === 'ASC' ? 'Descending' : 'Ascending'}`}
                 >
                   {sort.order === 'ASC' ? (
-                    <span className="sort-icon">↗️ A-Z</span>
+                    <span className="sort-icon">A-Z</span>
                   ) : (
-                    <span className="sort-icon">↙️ Z-A</span>
+                    <span className="sort-icon">Z-A</span>
                   )}
                 </button>
               </div>
@@ -352,10 +344,7 @@ const ContactList: React.FC = () => {
 
           <div className="pagination-controls">
             <div className="control-group">
-              <label className="control-label">
-                <span className="icon">📄</span>
-                Items per page
-              </label>
+              <label className="control-label">Items per page</label>
               <select
                 value={pagination.limit}
                 onChange={e => handleLimitChange(Number(e.target.value))}
@@ -373,7 +362,6 @@ const ContactList: React.FC = () => {
         {/* Enhanced Results Info */}
         <div className="results-info">
           <div className="results-text">
-            <span className="icon">📊</span>
             Showing <strong>{contactsData.contacts.length}</strong> of{' '}
             <strong>{contactsData.total}</strong> contacts
             {hasActiveFilters && <span className="filtered-badge">Filtered</span>}
@@ -391,7 +379,6 @@ const ContactList: React.FC = () => {
           </div>
         ) : contactsData.contacts.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📭</div>
             <h3>No contacts found</h3>
             <p>
               {hasActiveFilters
@@ -415,7 +402,6 @@ const ContactList: React.FC = () => {
                       onClick={() => handleSortChange('name')}
                     >
                       <span className="header-content">
-                        <span className="header-icon">👤</span>
                         Name
                         {sort.field === 'name' && (
                           <span className="sort-indicator">{sort.order === 'ASC' ? '↑' : '↓'}</span>
@@ -427,7 +413,6 @@ const ContactList: React.FC = () => {
                       onClick={() => handleSortChange('email')}
                     >
                       <span className="header-content">
-                        <span className="header-icon">📧</span>
                         Email
                         {sort.field === 'email' && (
                           <span className="sort-indicator">{sort.order === 'ASC' ? '↑' : '↓'}</span>
@@ -439,7 +424,6 @@ const ContactList: React.FC = () => {
                       onClick={() => handleSortChange('phone')}
                     >
                       <span className="header-content">
-                        <span className="header-icon">📱</span>
                         Phone
                         {sort.field === 'phone' && (
                           <span className="sort-indicator">{sort.order === 'ASC' ? '↑' : '↓'}</span>
@@ -451,7 +435,6 @@ const ContactList: React.FC = () => {
                       onClick={() => handleSortChange('subject')}
                     >
                       <span className="header-content">
-                        <span className="header-icon">�</span>
                         Subject
                         {sort.field === 'subject' && (
                           <span className="sort-indicator">{sort.order === 'ASC' ? '↑' : '↓'}</span>
@@ -459,17 +442,13 @@ const ContactList: React.FC = () => {
                       </span>
                     </th>
                     <th className="message-header">
-                      <span className="header-content">
-                        <span className="header-icon">💬</span>
-                        Message
-                      </span>
+                      <span className="header-content">Message</span>
                     </th>
                     <th
                       className={`sortable ${sort.field === 'consent' ? 'active' : ''}`}
                       onClick={() => handleSortChange('consent')}
                     >
                       <span className="header-content">
-                        <span className="header-icon">✅</span>
                         Consent
                         {sort.field === 'consent' && (
                           <span className="sort-indicator">{sort.order === 'ASC' ? '↑' : '↓'}</span>
@@ -477,10 +456,7 @@ const ContactList: React.FC = () => {
                       </span>
                     </th>
                     <th className="actions-header">
-                      <span className="header-content">
-                        <span className="header-icon">⚙️</span>
-                        Actions
-                      </span>
+                      <span className="header-content">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -525,17 +501,7 @@ const ContactList: React.FC = () => {
                           <span
                             className={`consent-badge ${contact.consent ? 'consented' : 'not-consented'}`}
                           >
-                            {contact.consent ? (
-                              <>
-                                <span className="consent-icon">✓</span>
-                                Yes
-                              </>
-                            ) : (
-                              <>
-                                <span className="consent-icon">✗</span>
-                                No
-                              </>
-                            )}
+                            {contact.consent ? <>Yes</> : <>No</>}
                           </span>
                         </div>
                       </td>

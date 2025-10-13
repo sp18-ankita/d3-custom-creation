@@ -1,14 +1,14 @@
 import React from 'react';
-import { WeatherWidget } from '../widget/WeatherWidget';
+// import { WeatherWidget } from '../widget/WeatherWidget'; // Commented out to prevent multiple API calls
 
 const About: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-gray-100 px-4 py-8 font-sans text-gray-800">
       {/* Floating Weather Widget */}
-      <div className="absolute top-4 right-4 z-50">
+      {/* <div className="absolute top-4 right-4 z-50">
         <WeatherWidget />
-      </div>
-
+      </div> */}{' '}
+      {/* Commented out to prevent multiple API calls */}
       {/* Left-Aligned Card Content */}
       <div className="max-w-4xl mx-auto">
         <div className="bg-blue-50 rounded-xl shadow-md p-8 md:p-10 border border-blue-100">
@@ -29,8 +29,10 @@ const About: React.FC = () => {
 
           <p className="text-lg leading-relaxed mb-6">
             Users can input custom JSON data to render charts and adjust settings like speedometer
-            zones, tick marks, and value ranges. The app also includes a live weather widget powered
-            by the OpenWeatherMap API.
+            zones, tick marks, and value ranges.
+            {/* The app also includes a live weather widget powered
+            by the OpenWeatherMap API. */}{' '}
+            {/* Weather widget temporarily disabled */}
           </p>
 
           <p className="text-xl font-semibold text-gray-700 mb-2">Technologies Used</p>
