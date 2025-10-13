@@ -74,7 +74,7 @@ describe('ContactForm', () => {
   });
 
   test('shows error if email already exists', async () => {
-    mockedService.addContact.mockResolvedValue(null); // simulate duplicate
+    mockedService.addContact.mockRejectedValue(new Error('Email must be unique')); // simulate duplicate
 
     renderForm();
 

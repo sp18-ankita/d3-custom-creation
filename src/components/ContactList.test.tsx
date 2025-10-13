@@ -48,7 +48,7 @@ test('renders contact list and triggers delete', async () => {
     limit: 10,
     totalPages: 1,
   });
-  mockedService.deleteContact.mockResolvedValue(true);
+  mockedService.deleteContact.mockResolvedValue(undefined);
 
   // Mock window.confirm to return true
   window.confirm = vi.fn().mockReturnValue(true);
