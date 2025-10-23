@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
+import { logPageView, logUserAction } from '../monitoring';
 import {
   addContact,
   getContactById,
   updateContact,
   type Contact,
 } from '../services/contactServices';
+import ErrorBoundary from './ErrorBoundary';
 
 const initialState: Omit<Contact, 'id'> = {
   name: '',
@@ -27,16 +29,31 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
+  // Log page view on component mount
+  useEffect(() => {
+    logPageView(isEdit ? 'Contact Edit' : 'Contact Form', {
+      mode: isEdit ? 'edit' : 'create',
+      contactId: id,
+    });
+  }, [isEdit, id]);
+
   useEffect(() => {
     if (isEdit) {
       (async () => {
-        const existing = await getContactById(id!);
-        if (existing) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { id: contactId, ...rest } = existing;
-          setFormData(rest);
-        } else {
-          alert('Contact not found!');
+        try {
+          const existing = await getContactById(id!);
+          if (existing) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id: contactId, ...rest } = existing;
+            setFormData(rest);
+            logUserAction('Contact Data Loaded', { contactId: id });
+          } else {
+            alert('Contact not found!');
+            logUserAction('Contact Load Failed', { contactId: id, reason: 'not found' });
+            navigate('/contacts/new');
+          }
+        } catch (error) {
+          logUserAction('Contact Load Failed', { contactId: id, error: String(error) });
           navigate('/contacts/new');
         }
       })();
@@ -67,22 +84,49 @@ const ContactForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-
-    let result: Contact | null = null;
-    if (isEdit) {
-      result = await updateContact(id!, formData);
-    } else {
-      result = await addContact(formData);
-    }
-
-    if (!result) {
-      setErrors({ email: 'Email must be unique' });
+    if (!validate()) {
+      logUserAction('Form Validation Failed', {
+        mode: isEdit ? 'edit' : 'create',
+        errors: Object.keys(errors),
+      });
       return;
     }
 
-    setSubmitted(true);
-    setTimeout(() => navigate('/contacts'), 1200);
+    logUserAction('Form Submission Attempted', {
+      mode: isEdit ? 'edit' : 'create',
+      contactId: id,
+    });
+
+    let result: Contact | null = null;
+    try {
+      if (isEdit) {
+        result = await updateContact(id!, formData);
+      } else {
+        result = await addContact(formData);
+      }
+
+      if (!result) {
+        setErrors({ email: 'Email must be unique' });
+        logUserAction('Form Submission Failed', {
+          mode: isEdit ? 'edit' : 'create',
+          reason: 'duplicate email',
+        });
+        return;
+      }
+
+      logUserAction('Form Submission Successful', {
+        mode: isEdit ? 'edit' : 'create',
+        contactId: result.id,
+      });
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/contacts'), 1200);
+    } catch (error) {
+      logUserAction('Form Submission Failed', {
+        mode: isEdit ? 'edit' : 'create',
+        error: String(error),
+      });
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -95,72 +139,76 @@ const ContactForm: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="contact-success">
-        {isEdit ? 'Contact updated!' : 'Thank you for contacting us!'}
-      </div>
+      <ErrorBoundary pageName="Contact Success">
+        <div className="contact-success">
+          {isEdit ? 'Contact updated!' : 'Thank you for contacting us!'}
+        </div>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="contact-form">
-      <h2>{isEdit ? 'Edit Contact' : 'Contact Us'}</h2>
+    <ErrorBoundary pageName={isEdit ? 'Contact Edit' : 'Contact Form'}>
+      <form onSubmit={handleSubmit} className="contact-form">
+        <h2>{isEdit ? 'Edit Contact' : 'Contact Us'}</h2>
 
-      {[
-        { label: 'Full Name', name: 'name', type: 'text' },
-        { label: 'Email', name: 'email', type: 'email' },
-        { label: 'Phone (optional)', name: 'phone', type: 'text' },
-        { label: 'Subject', name: 'subject', type: 'text' },
-      ].map(({ label, name, type }) => (
-        <div className="form-group" key={name}>
-          <label htmlFor={name}>{label}</label>
-          <input
-            type={type}
-            id={name}
-            name={name}
-            data-testid={name}
-            value={
-              typeof formData[name as keyof typeof formData] === 'boolean'
-                ? ''
-                : String(formData[name as keyof typeof formData] ?? '')
-            }
+        {[
+          { label: 'Full Name', name: 'name', type: 'text' },
+          { label: 'Email', name: 'email', type: 'email' },
+          { label: 'Phone (optional)', name: 'phone', type: 'text' },
+          { label: 'Subject', name: 'subject', type: 'text' },
+        ].map(({ label, name, type }) => (
+          <div className="form-group" key={name}>
+            <label htmlFor={name}>{label}</label>
+            <input
+              type={type}
+              id={name}
+              name={name}
+              data-testid={name}
+              value={
+                typeof formData[name as keyof typeof formData] === 'boolean'
+                  ? ''
+                  : String(formData[name as keyof typeof formData] ?? '')
+              }
+              onChange={handleChange}
+            />
+            {errors[name] && <p className="error-text">{errors[name]}</p>}
+          </div>
+        ))}
+
+        <div className="form-group">
+          <label htmlFor="message">Message</label>
+          <textarea
+            id="message"
+            name="message"
+            data-testid="message"
+            value={formData.message}
             onChange={handleChange}
+            rows={4}
           />
-          {errors[name] && <p className="error-text">{errors[name]}</p>}
+          {errors.message && <p className="error-text">{errors.message}</p>}
         </div>
-      ))}
 
-      <div className="form-group">
-        <label htmlFor="message">Message</label>
-        <textarea
-          id="message"
-          name="message"
-          data-testid="message"
-          value={formData.message}
-          onChange={handleChange}
-          rows={4}
-        />
-        {errors.message && <p className="error-text">{errors.message}</p>}
-      </div>
+        <div className="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              name="consent"
+              data-testid="consent"
+              checked={formData.consent}
+              onChange={handleChange}
+              style={{ width: 'auto', marginRight: '0.5rem' }}
+            />
+            <span>I agree to be contacted</span>
+          </label>
+          {errors.consent && <p className="error-text">{errors.consent}</p>}
+        </div>
 
-      <div className="form-group checkbox">
-        <label>
-          <input
-            type="checkbox"
-            name="consent"
-            data-testid="consent"
-            checked={formData.consent}
-            onChange={handleChange}
-            style={{ width: 'auto', marginRight: '0.5rem' }}
-          />
-          <span>I agree to be contacted</span>
-        </label>
-        {errors.consent && <p className="error-text">{errors.consent}</p>}
-      </div>
-
-      <button type="submit" className="submit-button">
-        {isEdit ? 'Update Contact' : 'Submit Message'}
-      </button>
-    </form>
+        <button type="submit" className="submit-button">
+          {isEdit ? 'Update Contact' : 'Submit Message'}
+        </button>
+      </form>
+    </ErrorBoundary>
   );
 };
 
