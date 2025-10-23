@@ -152,6 +152,16 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     [defaultHeaders],
   );
 
+  // Helper function to determine if an error is retryable
+  const isRetryableError = (error: unknown): boolean => {
+    if (error instanceof ApiError && error.code) {
+      // Retry on 5xx server errors and some 4xx errors
+      const statusCode = parseInt(error.code);
+      return statusCode >= 500 || statusCode === 429 || statusCode === 408;
+    }
+    return false;
+  };
+
   // Main execution function with retry logic
   const executeWithRetry = useCallback(
     async (requestConfig: RequestConfig, attempt = 0): Promise<T> => {
@@ -162,10 +172,27 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
           return await executeRestRequest(requestConfig.config);
         }
       } catch (error) {
-        if (attempt < retryAttempts) {
+        // Enhanced error handling for specific error types
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.error('Network error (possibly CORS or connection issue):', error);
+          throw new ApiError(
+            'Network connection failed. Please check your internet connection or try again later.',
+            'NETWORK_ERROR',
+          );
+        }
+
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error('Request was aborted:', error);
+          throw new ApiError('Request was cancelled.', 'ABORT_ERROR');
+        }
+
+        // Retry logic for recoverable errors
+        if (attempt < retryAttempts && isRetryableError(error)) {
+          console.log(`Retrying request (attempt ${attempt + 1}/${retryAttempts})...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
           return executeWithRetry(requestConfig, attempt + 1);
         }
+
         throw error;
       }
     },
