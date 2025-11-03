@@ -1,3 +1,4 @@
+import { useFlags } from 'launchdarkly-react-client-sdk';
 import React from 'react';
 import { ChartConfig, type ChartData } from '../../config/ChartConfig';
 import type { ChartType } from '../../enums/ChartType';
@@ -13,6 +14,7 @@ export const GenericChartRenderer: React.FC<GenericChartRendererProps> = ({
   data,
   customProps = {},
 }) => {
+  const { enableChartAnimations } = useFlags();
   const config = ChartConfig[type];
 
   if (!config) {
@@ -20,7 +22,11 @@ export const GenericChartRenderer: React.FC<GenericChartRendererProps> = ({
   }
 
   const ChartComponent = config.component;
-  const props = { ...config.mapProps(data), ...customProps };
+  const props = {
+    ...config.mapProps(data),
+    ...customProps,
+    animated: enableChartAnimations,
+  };
 
   return <ChartComponent {...props} />;
 };

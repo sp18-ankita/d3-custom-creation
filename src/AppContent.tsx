@@ -1,3 +1,4 @@
+import { useFlags } from 'launchdarkly-react-client-sdk';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
@@ -22,6 +23,7 @@ const DEFAULT_DATA: DataPoint[] = [
 
 export const AppContent: React.FC = () => {
   const navigate = useNavigate();
+  const { showWeatherWidget, showContactUsForm, titleName } = useFlags();
   const [dataInput, setDataInput] = useState<string>(JSON.stringify(DEFAULT_DATA, null, 2));
   const [chartData, setChartData] = useState<DataPoint[]>(DEFAULT_DATA);
 
@@ -131,13 +133,13 @@ export const AppContent: React.FC = () => {
   return (
     <ErrorBoundary pageName="Home/Dashboard">
       <div>
-        <WeatherWidget />
+        {showWeatherWidget && <WeatherWidget />}
         <SentryTest />
         <div
           className="app-container"
           style={{ padding: 20, fontFamily: 'Arial, sans-serif', position: 'relative' }}
         >
-          <h1>D3 Chart Viewer</h1>
+          <h1>{titleName || 'D3 Chart Viewer'}</h1>
 
           <ChartTypeSelector chartType={chartType} onChange={setChartType} />
 
@@ -213,24 +215,26 @@ export const AppContent: React.FC = () => {
           >
             About App
           </button>
-          <button
-            onClick={handleNavigateToContact}
-            style={{
-              position: 'fixed',
-              bottom: 20,
-              right: 140, // Adjust this to avoid overlap with About button
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '999px',
-              padding: '10px 20px',
-              fontSize: '16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              cursor: 'pointer',
-            }}
-          >
-            Contact Us
-          </button>
+          {showContactUsForm && (
+            <button
+              onClick={handleNavigateToContact}
+              style={{
+                position: 'fixed',
+                bottom: 20,
+                right: 140, // Adjust this to avoid overlap with About button
+                backgroundColor: '#28a745',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '10px 20px',
+                fontSize: '16px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                cursor: 'pointer',
+              }}
+            >
+              Contact Us
+            </button>
+          )}
         </div>
       </div>
     </ErrorBoundary>
