@@ -203,12 +203,13 @@ export const AppContent: React.FC = () => {
               position: 'fixed',
               bottom: 20,
               right: 20,
-              backgroundColor: '#007bff',
-              color: '#fff',
+              backgroundColor: '#0056b3', // Darker blue for better contrast
+              color: '#ffffff',
               border: 'none',
               borderRadius: '999px',
               padding: '10px 20px',
               fontSize: '16px',
+              fontWeight: '500',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               cursor: 'pointer',
             }}
@@ -222,12 +223,13 @@ export const AppContent: React.FC = () => {
                 position: 'fixed',
                 bottom: 20,
                 right: 140, // Adjust this to avoid overlap with About button
-                backgroundColor: '#28a745',
-                color: '#fff',
+                backgroundColor: '#146c2e', // Darker green for better contrast
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '999px',
                 padding: '10px 20px',
                 fontSize: '16px',
+                fontWeight: '500',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                 cursor: 'pointer',
               }}

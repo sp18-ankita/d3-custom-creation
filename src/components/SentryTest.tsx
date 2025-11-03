@@ -29,11 +29,12 @@ const SentryTest: React.FC = () => {
           onClick={testSentryCapture}
           style={{
             padding: '10px 15px',
-            backgroundColor: '#007bff',
+            backgroundColor: '#0056b3', // Darker blue for better contrast
             color: 'white',
             border: 'none',
             borderRadius: '3px',
             cursor: 'pointer',
+            fontWeight: '500',
           }}
         >
           Test Manual Capture
@@ -42,11 +43,12 @@ const SentryTest: React.FC = () => {
           onClick={testSentryThrow}
           style={{
             padding: '10px 15px',
-            backgroundColor: '#dc3545',
+            backgroundColor: '#ab2029', // Darker red for better contrast
             color: 'white',
             border: 'none',
             borderRadius: '3px',
             cursor: 'pointer',
+            fontWeight: '500',
           }}
         >
           Test Error Boundary
