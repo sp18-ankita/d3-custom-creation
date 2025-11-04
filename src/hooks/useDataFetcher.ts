@@ -57,7 +57,7 @@ interface UseDataFetcherOptions {
  */
 export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {}) => {
   const {
-    defaultGraphQLEndpoint = 'http://localhost:4001/graphql',
+    defaultGraphQLEndpoint = import.meta.env.VITE_API_URL,
     defaultHeaders = { 'Content-Type': 'application/json' },
     onError,
     onSuccess,
@@ -162,7 +162,12 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
           return await executeRestRequest(requestConfig.config);
         }
       } catch (error) {
-        if (attempt < retryAttempts) {
+        // Only retry on network errors or 5xx server errors
+        const shouldRetry =
+          (error instanceof TypeError && error.message.includes('network')) || // Network error
+          (error instanceof ApiError && error.code && parseInt(error.code) >= 500); // 5xx error
+
+        if (shouldRetry && attempt < retryAttempts) {
           await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
           return executeWithRetry(requestConfig, attempt + 1);
         }
