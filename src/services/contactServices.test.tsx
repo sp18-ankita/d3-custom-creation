@@ -1,4 +1,3 @@
-import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   addContact,
@@ -7,73 +6,16 @@ import {
   getContacts,
   updateContact,
   type Contact,
-  type ContactsResponse,
+  type ContactsFilter,
+  type ContactsPagination,
+  type ContactsSort,
 } from './contactServices';
 
-// Define the structure of our mock data and responses
-interface MockGraphQLResponse {
-  data?: {
-    contacts?: ContactsResponse;
-    contact?: Contact | null;
-    addContact?: Contact;
-    updateContact?: Contact;
-    deleteContact?: boolean;
-  };
-}
+// Mock the fetch function
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
-// Helper type for our mocked function
-type MockGraphQLFn = {
-  (): Promise<MockGraphQLResponse | null>;
-  mockResolvedValueOnce: (value: MockGraphQLResponse | null) => MockGraphQLFn;
-  mockImplementationOnce: (fn: () => Promise<MockGraphQLResponse | null>) => MockGraphQLFn;
-};
-
-// Type for mock implementation function
-type MockImplementation = () => Promise<MockGraphQLResponse | null>;
-
-// Create a properly typed mock
-const mockGraphQL = vi.fn() as unknown as MockGraphQLFn;
-mockGraphQL.mockResolvedValueOnce = (value: MockGraphQLResponse | null) => {
-  (
-    mockGraphQL as { mockImplementationOnce: (fn: MockImplementation) => MockGraphQLFn }
-  ).mockImplementationOnce(() => Promise.resolve(value));
-  return mockGraphQL;
-};
-
-// Mock the module with proper typing
-vi.mock('../hooks/useDataFetcher', () => ({
-  useDataFetcher: () => ({
-    graphql: mockGraphQL,
-  }),
-}));
-type GraphQLMock = Mock & {
-  mockResolvedValueOnce: (value: MockGraphQLResponse | null) => GraphQLMock;
-};
-
-// Helper to create a properly typed mock
-const createGraphQLMock = (): GraphQLMock => {
-  const mock = vi.fn() as GraphQLMock;
-  mock.mockResolvedValueOnce = value => {
-    mock.mockImplementationOnce(() => Promise.resolve(value));
-    return mock;
-  };
-  return mock;
-};
-
-// Define our mock hook return type
-interface MockDataFetcher {
-  graphql: GraphQLMock;
-}
-
-// Mock the module with our typed implementation
-vi.mock('../hooks/useDataFetcher', () => ({
-  useDataFetcher: () =>
-    ({
-      graphql: createGraphQLMock(),
-    }) as MockDataFetcher,
-}));
-
-describe('Contact Service Tests', () => {
+describe('Contact Services', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -88,9 +30,9 @@ describe('Contact Service Tests', () => {
     consent: true,
   };
 
-  describe('Basic CRUD Operations', () => {
-    test('getContacts fetches contacts successfully', async () => {
-      const mockResponse: MockGraphQLResponse = {
+  describe('getContacts', () => {
+    test('fetches contacts without parameters', async () => {
+      const mockResponse = {
         data: {
           contacts: {
             contacts: [mockContact],
@@ -101,161 +43,22 @@ describe('Contact Service Tests', () => {
           },
         },
       };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
+      });
 
       const result = await getContacts();
-      expect(result).toBeDefined();
-      expect(result?.contacts).toHaveLength(1);
-      expect(result?.contacts[0]).toEqual(mockContact);
-    });
+      expect(result).toEqual(mockResponse.data.contacts);
 
-    test('getContactById fetches a single contact', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { contact: mockContact },
-      };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContactById('1');
-      expect(result).toEqual(mockContact);
-    });
-
-    test('addContact creates a new contact', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { addContact: mockContact },
-      };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const { ...input } = mockContact;
-      const result = await addContact(input);
-      expect(result).toEqual(mockContact);
-    });
-
-    test('updateContact modifies an existing contact', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { updateContact: mockContact },
-      };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const { ...input } = mockContact;
-      const result = await updateContact('1', input);
-      expect(result).toEqual(mockContact);
-    });
-
-    test('deleteContact removes a contact', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { deleteContact: true },
-      };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await deleteContact('1');
-      expect(result).toBe(true);
-    });
-  });
-
-  // Filter Combination Tests
-  describe('Filter Combinations', () => {
-    test('filters by name and consent', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: {
-          contacts: {
-            contacts: [mockContact],
-            total: 1,
-            page: 1,
-            limit: 10,
-            totalPages: 1,
-          },
-        },
-      };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContacts({
-        name: 'Test',
-        consent: true,
-      });
-
-      expect(result).toBeDefined();
-      expect(result?.contacts).toHaveLength(1);
-      const graphqlCalls = fetcher.graphql.mock.calls;
-      expect(graphqlCalls[0][0].variables.filter).toEqual({
-        name: 'Test',
-        consent: true,
-      });
-    });
-
-    test('filters by email pattern', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: {
-          contacts: {
-            contacts: [mockContact],
-            total: 1,
-            page: 1,
-            limit: 10,
-            totalPages: 1,
-          },
-        },
-      };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContacts({
-        email: '@example.com',
-      });
-
-      expect(result).toBeDefined();
-      const graphqlCalls = fetcher.graphql.mock.calls;
-      expect(graphqlCalls[0][0].variables.filter).toEqual({
-        email: '@example.com',
-      });
-    });
-  });
-
-  // Pagination Boundary Tests
-  describe('Pagination Boundaries', () => {
-    test('handles first page with limit 1', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: {
-          contacts: {
-            contacts: [mockContact],
-            total: 3,
-            page: 1,
-            limit: 1,
-            totalPages: 3,
-          },
-        },
-      };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContacts(undefined, undefined, {
-        page: 1,
-        limit: 1,
-      });
-
-      expect(result).toBeDefined();
-      expect(result?.contacts).toHaveLength(1);
-      expect(result?.totalPages).toBe(3);
+      const fetchCall = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(fetchCall[1].body);
+      expect(requestBody.variables.filter).toBeUndefined();
+      expect(requestBody.variables.sort).toBeUndefined();
+      expect(requestBody.variables.pagination).toBeUndefined();
     });
 
     test('handles empty result set', async () => {
-      const mockResponse: MockGraphQLResponse = {
+      const mockResponse = {
         data: {
           contacts: {
             contacts: [],
@@ -266,82 +69,319 @@ describe('Contact Service Tests', () => {
           },
         },
       };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContacts({
-        name: 'NonExistentName',
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.contacts).toHaveLength(0);
-      expect(result?.totalPages).toBe(0);
+      const result = await getContacts();
+      expect(result.contacts).toHaveLength(0);
+      expect(result.totalPages).toBe(0);
     });
 
-    test('handles last page', async () => {
-      const mockResponse: MockGraphQLResponse = {
+    test('handles filtering by all fields', async () => {
+      const filter: ContactsFilter = {
+        name: 'Test',
+        email: '@example.com',
+        phone: '123',
+        subject: 'Important',
+        message: 'urgent',
+        consent: true,
+      };
+
+      const mockResponse = {
         data: {
           contacts: {
             contacts: [mockContact],
-            total: 11,
-            page: 2,
+            total: 1,
+            page: 1,
             limit: 10,
-            totalPages: 2,
+            totalPages: 1,
           },
         },
       };
-
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
-
-      const result = await getContacts(undefined, undefined, {
-        page: 2,
-        limit: 10,
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.contacts).toHaveLength(1);
-      expect(result?.page).toBe(2);
-      expect(result?.totalPages).toBe(2);
+      await getContacts(filter);
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(fetchCall[1].body);
+      expect(requestBody.variables.filter).toEqual(filter);
+    });
+
+    test('handles all sorting combinations', async () => {
+      const fields = ['name', 'email', 'phone', 'subject', 'message', 'consent'] as const;
+      const orders = ['ASC', 'DESC'] as const;
+
+      for (const field of fields) {
+        for (const order of orders) {
+          const sort: ContactsSort = { field, order };
+          const mockResponse = {
+            data: {
+              contacts: {
+                contacts: [mockContact],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+              },
+            },
+          };
+          mockFetch.mockResolvedValueOnce({
+            json: async () => mockResponse,
+          });
+
+          await getContacts(undefined, sort);
+
+          const fetchCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+          const requestBody = JSON.parse(fetchCall[1].body);
+          expect(requestBody.variables.sort).toEqual(sort);
+        }
+      }
+    });
+
+    test('handles pagination boundaries', async () => {
+      const paginationCases: ContactsPagination[] = [
+        { page: 1, limit: 1 }, // Minimum values
+        { page: 1, limit: 100 }, // Maximum page size
+        { page: 100, limit: 10 }, // High page number
+        { page: 50, limit: 50 }, // Equal values
+      ];
+
+      for (const pagination of paginationCases) {
+        const mockResponse = {
+          data: {
+            contacts: {
+              contacts: [],
+              total: 500,
+              page: pagination.page,
+              limit: pagination.limit,
+              totalPages: Math.ceil(500 / pagination.limit),
+            },
+          },
+        };
+        mockFetch.mockResolvedValueOnce({
+          json: async () => mockResponse,
+        });
+
+        const result = await getContacts(undefined, undefined, pagination);
+        expect(result.page).toBe(pagination.page);
+        expect(result.limit).toBe(pagination.limit);
+      }
+    });
+
+    test('handles network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      await expect(getContacts()).rejects.toThrow();
+    });
+
+    test('handles malformed response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          data: null,
+        }),
+      });
+
+      await expect(getContacts()).rejects.toThrow('Failed to fetch contacts');
     });
   });
 
-  // Error Handling Tests
-  describe('Error Handling', () => {
-    test('handles invalid GraphQL response', async () => {
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(null);
+  describe('getContactById', () => {
+    test('fetches contact successfully', async () => {
+      const mockResponse = {
+        data: {
+          contact: mockContact,
+        },
+      };
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
+      });
 
-      const result = await getContacts();
-      expect(result).toBeNull();
+      const result = await getContactById('1');
+      expect(result).toEqual(mockContact);
     });
 
-    test('handles GraphQL errors in contact deletion', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { deleteContact: false },
+    test('handles non-existent contact', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          data: {
+            contact: null,
+          },
+        }),
+      });
+
+      await expect(getContactById('999')).rejects.toThrow('Failed to fetch contact');
+    });
+
+    test('handles GraphQL errors', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          errors: [{ message: 'Invalid ID' }],
+        }),
+      });
+
+      await expect(getContactById('invalid-id')).rejects.toThrow('GraphQL Error');
+    });
+  });
+
+  describe('addContact', () => {
+    test('creates contact successfully', async () => {
+      const input = {
+        name: mockContact.name,
+        email: mockContact.email,
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
       };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
+
+      const mockResponse = {
+        data: {
+          addContact: mockContact,
+        },
+      };
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
+      });
+
+      const result = await addContact(input);
+      expect(result).toEqual(mockContact);
+    });
+
+    test('handles validation errors', async () => {
+      const invalidInput = {
+        name: '', // Empty name
+        email: 'invalid-email', // Invalid email
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          errors: [{ message: 'Validation failed' }],
+        }),
+      });
+
+      await expect(addContact(invalidInput)).rejects.toThrow('GraphQL Error');
+    });
+
+    test('handles server error', async () => {
+      const input = {
+        name: mockContact.name,
+        email: mockContact.email,
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          data: { addContact: null },
+        }),
+      });
+
+      await expect(addContact(input)).rejects.toThrow('Failed to add contact');
+    });
+  });
+
+  describe('updateContact', () => {
+    test('updates contact successfully', async () => {
+      const input = {
+        name: 'Updated Name',
+        email: mockContact.email,
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
+      };
+
+      const updatedContact = { ...mockContact, name: 'Updated Name' };
+      const mockResponse = {
+        data: {
+          updateContact: updatedContact,
+        },
+      };
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
+      });
+
+      const result = await updateContact('1', input);
+      expect(result).toEqual(updatedContact);
+    });
+
+    test('handles non-existent contact', async () => {
+      const input = { ...mockContact };
+      delete input.id;
+
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          data: { updateContact: null },
+        }),
+      });
+
+      await expect(updateContact('999', input)).rejects.toThrow('Failed to update contact');
+    });
+
+    test('handles validation errors', async () => {
+      const invalidInput = {
+        name: mockContact.name,
+        email: 'invalid-email',
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          errors: [{ message: 'Invalid email format' }],
+        }),
+      });
+
+      await expect(updateContact('1', invalidInput)).rejects.toThrow('GraphQL Error');
+    });
+  });
+
+  describe('deleteContact', () => {
+    test('deletes contact successfully', async () => {
+      const mockResponse = {
+        data: {
+          deleteContact: true,
+        },
+      };
+      mockFetch.mockResolvedValueOnce({
+        json: async () => mockResponse,
+      });
 
       const result = await deleteContact('1');
+      expect(result).toBe(true);
+    });
+
+    test('handles non-existent contact', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          data: {
+            deleteContact: false,
+          },
+        }),
+      });
+
+      const result = await deleteContact('999');
       expect(result).toBe(false);
     });
 
-    test('handles empty GraphQL response in contact fetch', async () => {
-      const mockResponse: MockGraphQLResponse = {
-        data: { contact: null },
-      };
-      const { useDataFetcher } = await import('../hooks/useDataFetcher');
-      const fetcher = useDataFetcher() as MockFetcher;
-      fetcher.graphql.mockResolvedValueOnce(mockResponse);
+    test('handles server error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: async () => ({
+          errors: [{ message: 'Server error' }],
+        }),
+      });
 
-      const result = await getContactById('1');
-      expect(result).toBeNull();
+      await expect(deleteContact('1')).rejects.toThrow('GraphQL Error');
     });
   });
 });
