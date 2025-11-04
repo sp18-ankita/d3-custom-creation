@@ -314,8 +314,14 @@ describe('Contact Services', () => {
     });
 
     test('handles non-existent contact', async () => {
-      const input = { ...mockContact };
-      delete input.id;
+      const input = {
+        name: mockContact.name,
+        email: mockContact.email,
+        phone: mockContact.phone,
+        subject: mockContact.subject,
+        message: mockContact.message,
+        consent: mockContact.consent,
+      };
 
       mockFetch.mockResolvedValueOnce({
         json: async () => ({
