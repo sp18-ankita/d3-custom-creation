@@ -35,9 +35,10 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Check PR description
-        uses: actions-ecosystem/action-check-description@v1
+        uses: actions-ecosystem/action-check-pr-description@v1
         with:
           min_length: 20
+
 
   block-direct-main-commits:
     name: Block direct commits to main
