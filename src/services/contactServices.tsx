@@ -1,73 +1,282 @@
-// src/services/contactService.ts
+// import axios from 'axios';
 
+// Types
 export interface Contact {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   subject: string;
   message: string;
   consent: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-const STORAGE_KEY = 'contacts';
+export interface ContactsFilter {
+  name?: string;
+  email?: string;
+  phone?: string;
+  subject?: string;
+  consent?: boolean;
+}
 
-const generateId = () => '_' + Math.random().toString(36).substring(2, 9);
+export interface ContactsSort {
+  field: 'name' | 'email' | 'phone' | 'subject' | 'consent';
+  order: 'ASC' | 'DESC';
+}
 
-const getStoredContacts = (): Contact[] => {
-  try {
-    const json = localStorage.getItem(STORAGE_KEY);
-    return json ? JSON.parse(json) : [];
-  } catch (e) {
-    console.error('Error reading contacts from localStorage', e);
-    return [];
-  }
-};
+export interface ContactsPagination {
+  page: number;
+  limit: number;
+}
 
-const saveToStorage = (contacts: Contact[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
-};
+export interface ContactsResponse {
+  contacts: Contact[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-export const getContacts = (): Contact[] => {
-  return getStoredContacts();
-};
+// Base API configuration (ready for future backend integration)
+// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4001';
 
-export const getContactById = (id: string): Contact | undefined => {
-  return getStoredContacts().find(c => c.id === id);
-};
+// Note: API client is prepared for future use when connecting to real backend
+// const api = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 10000,
+//   headers: {
+//     'Content-Type': 'application/json',
+//   },
+// });
 
-export const addContact = (data: Omit<Contact, 'id'>): Contact | null => {
-  const contacts = getStoredContacts();
-  if (contacts.some(c => c.email === data.email)) {
-    console.warn('Email already exists.');
-    return null;
-  }
-  const newContact: Contact = { id: generateId(), ...data };
-  saveToStorage([...contacts, newContact]);
-  return newContact;
-};
+// Mock data for development (since we don't have a full REST API yet)
+const mockContacts: Contact[] = [
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1-555-0123',
+    subject: 'General Inquiry',
+    message: 'Hello, I would like to know more about your services.',
+    consent: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    phone: '+1-555-0456',
+    subject: 'Support Request',
+    message: 'I need help with my account.',
+    consent: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Bob Johnson',
+    email: 'bob.johnson@example.com',
+    subject: 'Feature Request',
+    message: 'Can you add a dark mode feature?',
+    consent: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
-export const updateContact = (id: string, updated: Omit<Contact, 'id'>): Contact | null => {
-  const contacts = getStoredContacts();
-  if (contacts.some(c => c.id !== id && c.email === updated.email)) {
-    console.warn('Another contact with this email already exists.');
-    return null;
-  }
+let contactsData = [...mockContacts];
 
-  let updatedContact: Contact | null = null;
-  const updatedContacts = contacts.map(c => {
-    if (c.id === id) {
-      updatedContact = { id, ...updated };
-      return updatedContact;
+// Helper functions
+const applyFilters = (contacts: Contact[], filter: ContactsFilter): Contact[] => {
+  return contacts.filter(contact => {
+    if (filter.name && !contact.name.toLowerCase().includes(filter.name.toLowerCase())) {
+      return false;
     }
-    return c;
+    if (filter.email && !contact.email.toLowerCase().includes(filter.email.toLowerCase())) {
+      return false;
+    }
+    if (filter.phone && contact.phone && !contact.phone.includes(filter.phone)) {
+      return false;
+    }
+    if (filter.subject && !contact.subject.toLowerCase().includes(filter.subject.toLowerCase())) {
+      return false;
+    }
+    if (filter.consent !== undefined && contact.consent !== filter.consent) {
+      return false;
+    }
+    return true;
   });
-
-  saveToStorage(updatedContacts);
-  return updatedContact;
 };
 
-export const deleteContact = (id: string): void => {
-  const contacts = getStoredContacts();
-  saveToStorage(contacts.filter(c => c.id !== id));
+const applySorting = (contacts: Contact[], sort: ContactsSort): Contact[] => {
+  return contacts.sort((a, b) => {
+    let aValue = a[sort.field];
+    let bValue = b[sort.field];
+
+    // Handle undefined values
+    if (aValue === undefined) aValue = '';
+    if (bValue === undefined) bValue = '';
+
+    // Convert to string for comparison
+    const aStr = String(aValue).toLowerCase();
+    const bStr = String(bValue).toLowerCase();
+
+    if (sort.order === 'ASC') {
+      return aStr.localeCompare(bStr);
+    } else {
+      return bStr.localeCompare(aStr);
+    }
+  });
+};
+
+const applyPagination = (contacts: Contact[], pagination: ContactsPagination): Contact[] => {
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + pagination.limit;
+  return contacts.slice(startIndex, endIndex);
+};
+
+// API Functions
+export const getContacts = async (
+  filter: ContactsFilter = {},
+  sort: ContactsSort = { field: 'name', order: 'ASC' },
+  pagination: ContactsPagination = { page: 1, limit: 10 },
+): Promise<ContactsResponse> => {
+  try {
+    // In a real application, you would make an API call here
+    // For now, we'll use mock data with client-side filtering
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Apply filters
+    let filteredContacts = applyFilters(contactsData, filter);
+
+    // Apply sorting
+    filteredContacts = applySorting(filteredContacts, sort);
+
+    // Calculate pagination
+    const total = filteredContacts.length;
+    const totalPages = Math.ceil(total / pagination.limit);
+
+    // Apply pagination
+    const contacts = applyPagination(filteredContacts, pagination);
+
+    return {
+      contacts,
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    throw new Error('Failed to fetch contacts');
+  }
+};
+
+export const getContact = async (id: string): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const contact = contactsData.find(c => c.id === id);
+    if (!contact) {
+      throw new Error('Contact not found');
+    }
+
+    return contact;
+  } catch (error) {
+    console.error('Error fetching contact:', error);
+    throw error;
+  }
+};
+
+export const createContact = async (
+  contactData: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>,
+): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const newContact: Contact = {
+      ...contactData,
+      id: Date.now().toString(), // Simple ID generation for demo
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    contactsData.push(newContact);
+    return newContact;
+  } catch (error) {
+    console.error('Error creating contact:', error);
+    throw new Error('Failed to create contact');
+  }
+};
+
+export const updateContact = async (
+  id: string,
+  contactData: Partial<Omit<Contact, 'id' | 'createdAt'>>,
+): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const contactIndex = contactsData.findIndex(c => c.id === id);
+    if (contactIndex === -1) {
+      throw new Error('Contact not found');
+    }
+
+    const updatedContact: Contact = {
+      ...contactsData[contactIndex],
+      ...contactData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    contactsData[contactIndex] = updatedContact;
+    return updatedContact;
+  } catch (error) {
+    console.error('Error updating contact:', error);
+    throw error;
+  }
+};
+
+export const deleteContact = async (id: string): Promise<void> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const contactIndex = contactsData.findIndex(c => c.id === id);
+    if (contactIndex === -1) {
+      throw new Error('Contact not found');
+    }
+
+    contactsData.splice(contactIndex, 1);
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+    throw error;
+  }
+};
+
+// Utility function to reset data (useful for testing)
+export const resetContactsData = (): void => {
+  contactsData = [...mockContacts];
+};
+
+// Aliases for backward compatibility
+export const addContact = createContact;
+export const getContactById = getContact;
+
+export default {
+  getContacts,
+  getContact,
+  createContact,
+  updateContact,
+  deleteContact,
+  resetContactsData,
+  // Add aliases to default export as well
+  addContact,
+  getContactById,
 };

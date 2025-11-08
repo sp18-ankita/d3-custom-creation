@@ -11,9 +11,9 @@ const AppRoutes: React.FC = () => (
   <Routes>
     <Route path="/" element={<AppContent />} />
     <Route path="/about" element={<About />} />
-    <Route path="/contact" element={<ContactForm />} />
     <Route path="/contacts" element={<ContactList />} />
-    <Route path="/contact/:id" element={<ContactForm />} />
+    <Route path="/contacts/new" element={<ContactForm />} />
+    <Route path="/contacts/:id" element={<ContactForm />} />
     <Route
       path="*"
       element={

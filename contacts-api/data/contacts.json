@@ -1,0 +1,29 @@
+[
+  {
+    "id": "_02cf8ecf",
+    "name": "Ankita Agarwala",
+    "email": "ankita.cse.1910@gmail.com",
+    "phone": "435456356",
+    "subject": "XYZ",
+    "message": "Testing GQL",
+    "consent": true
+  },
+  {
+    "id": "_c311aefe",
+    "name": "Ankita Agarwala",
+    "email": "ankita.cse@gmail.com",
+    "phone": "4354563565",
+    "subject": "XYZ",
+    "message": "GQL trial in place.",
+    "consent": true
+  },
+  {
+    "id": "_c002392a",
+    "name": "ANKITA AGARWALA",
+    "email": "ankita@gmail.com",
+    "phone": "08486640662",
+    "subject": "Maths",
+    "message": "Architecture of maths",
+    "consent": true
+  }
+]
