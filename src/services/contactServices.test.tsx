@@ -18,32 +18,37 @@ const contact = {
   message: 'This is a test message',
   consent: true,
 };
-test('adds a contact', () => {
-  const added = addContact(contact);
+test('adds a contact', async () => {
+  const added = await addContact(contact);
   expect(added).toBeDefined();
   expect(added?.id).toBeDefined();
   expect(added?.name).toBe('John Doe');
 });
-test('prevents duplicate email on add', () => {
-  addContact(contact);
-  const result = addContact(contact);
+
+test('prevents duplicate email on add', async () => {
+  await addContact(contact);
+  const result = await addContact(contact);
   expect(result).toBeNull();
 });
 
-test('gets contact by ID', () => {
-  const added = addContact(contact)!;
-  const found = getContactById(added.id);
+test('gets contact by ID', async () => {
+  const added = await addContact(contact);
+  expect(added).toBeDefined();
+  const found = await getContactById(added!.id);
   expect(found?.name).toBe('John Doe');
 });
 
-test('updates a contact', () => {
-  const added = addContact(contact)!;
-  const updated = updateContact(added.id, { ...contact, name: 'Updated' })!;
-  expect(updated.name).toBe('Updated');
+test('updates a contact', async () => {
+  const added = await addContact(contact);
+  expect(added).toBeDefined();
+  const updated = await updateContact(added!.id, { ...contact, name: 'Updated' });
+  expect(updated?.name).toBe('Updated');
 });
 
-test('deletes a contact', () => {
-  const added = addContact(contact)!;
-  deleteContact(added.id);
-  expect(getContacts()).toHaveLength(0);
+test('deletes a contact', async () => {
+  const added = await addContact(contact);
+  expect(added).toBeDefined();
+  await deleteContact(added!.id);
+  const contacts = await getContacts();
+  expect(contacts.contacts).toHaveLength(0);
 });

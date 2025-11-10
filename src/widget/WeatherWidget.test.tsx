@@ -2,41 +2,34 @@ import '@testing-library/jest-dom';
 
 import { render, screen, waitFor } from '@testing-library/react';
 
-import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as weatherService from '../services/weatherService';
 import { WeatherWidget } from './WeatherWidget';
 
-interface OpenWeatherResponse {
-  main: {
-    temp: number;
-  };
-  weather: {
-    description: string;
-    icon: string;
-  }[];
-  name: string;
-}
-
-// Mock axios
-vi.mock('axios');
-const mockedAxios = axios as unknown as {
-  get: (url: string) => Promise<{ data: OpenWeatherResponse }>;
-};
+// Mock the weather service
+vi.mock('../services/weatherService');
 
 describe('WeatherWidget', () => {
-  const mockWeatherData = {
-    main: { temp: 30 },
-    weather: [{ description: 'clear sky', icon: '01d' }],
-    name: 'Bhubaneshwar',
+  const mockUseWeatherAPI = {
+    fetchWeather: vi.fn().mockResolvedValue(null),
+    data: {
+      temp: 30,
+      description: 'clear sky',
+      city: 'Bhubaneshwar',
+      icon: 'https://openweathermap.org/img/wn/01d.png',
+    },
+    loading: false,
+    error: null,
+    reset: vi.fn(),
   };
 
   beforeEach(() => {
     vi.resetAllMocks();
+    mockUseWeatherAPI.fetchWeather.mockResolvedValue(null);
+    vi.mocked(weatherService.useWeatherAPI).mockReturnValue(mockUseWeatherAPI);
   });
 
   it('renders weather data after API call', async () => {
-    mockedAxios.get = vi.fn().mockResolvedValue({ data: mockWeatherData });
-
     render(<WeatherWidget />);
 
     // Wait for weather data to appear
@@ -48,27 +41,46 @@ describe('WeatherWidget', () => {
     });
   });
 
-  it('does not render anything before weather data is fetched', () => {
-    mockedAxios.get = vi.fn().mockResolvedValue({ data: mockWeatherData });
+  it('does not render anything when loading', () => {
+    const loadingMock = {
+      ...mockUseWeatherAPI,
+      loading: true,
+      data: null,
+    };
+    loadingMock.fetchWeather.mockResolvedValue(null);
+    vi.mocked(weatherService.useWeatherAPI).mockReturnValue(loadingMock);
 
     const { container } = render(<WeatherWidget />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('handles API errors gracefully', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockedAxios.get = vi.fn().mockRejectedValue(new Error('API Error'));
+  it('does not render anything when there is an error', () => {
+    const errorMock = {
+      ...mockUseWeatherAPI,
+      error: { message: 'API Error', name: 'ApiError' },
+      data: null,
+    };
+    errorMock.fetchWeather.mockResolvedValue(null);
+    vi.mocked(weatherService.useWeatherAPI).mockReturnValue(errorMock);
 
     const { container } = render(<WeatherWidget />);
+    expect(container).toBeEmptyDOMElement();
+  });
 
-    await waitFor(() => {
-      expect(container).toBeEmptyDOMElement();
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Weather API error:'),
-        expect.any(Error),
-      );
-    });
+  it('does not render anything when data is null', () => {
+    const nullDataMock = {
+      ...mockUseWeatherAPI,
+      data: null,
+    };
+    nullDataMock.fetchWeather.mockResolvedValue(null);
+    vi.mocked(weatherService.useWeatherAPI).mockReturnValue(nullDataMock);
 
-    errorSpy.mockRestore();
+    const { container } = render(<WeatherWidget />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('calls fetchWeather on mount', () => {
+    render(<WeatherWidget />);
+    expect(mockUseWeatherAPI.fetchWeather).toHaveBeenCalledWith('Bhubaneshwar');
   });
 });

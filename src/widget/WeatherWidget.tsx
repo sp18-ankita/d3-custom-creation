@@ -1,39 +1,54 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-
-interface WeatherData {
-  temp: number;
-  description: string;
-  city: string;
-  icon: string;
-}
+import { useWeatherAPI, type WeatherData } from '../services/weatherService';
 
 export const WeatherWidget: React.FC = () => {
+  const { fetchWeather, loading, error } = useWeatherAPI();
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-        const city = 'Bhubaneshwar';
-        const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
-        const response = await axios.get(url);
-        const data = response.data;
-
-        setWeather({
-          temp: data.main.temp,
-          description: data.weather[0].description,
-          city: data.name,
-          icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
+    if (!hasInitialized) {
+      setHasInitialized(true);
+      fetchWeather('Bhubaneshwar')
+        .then(data => {
+          if (data) {
+            setWeather(data);
+          }
+        })
+        .catch(err => {
+          console.error('Weather fetch error:', err);
         });
-      } catch (error) {
-        console.error('Weather API error:', error);
-      }
-    };
+    }
+  }, [fetchWeather, hasInitialized]);
 
-    fetchWeather();
-  }, []);
+  // Don't render anything while loading initially
+  if (!hasInitialized || (loading && !weather)) return null;
 
+  // Show error state with fallback data
+  if (error && !weather) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 20,
+          backgroundColor: '#ffebee',
+          backdropFilter: 'blur(6px)',
+          padding: '10px 14px',
+          borderRadius: '12px',
+          fontSize: 14,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+          color: '#c62828',
+        }}
+        data-testid="weather-widget-error"
+      >
+        ⚠️ Weather unavailable
+      </div>
+    );
+  }
+
+  // Don't render if no weather data
   if (!weather) return null;
 
   return (

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin-bottom: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; border-radius: 3px; white-space: pre-wrap; }
+        button { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Contact API Test - Filters, Sorting & Pagination</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Basic Pagination</h3>
+        <button onclick="testBasicPagination()">Run Test</button>
+        <div id="test1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Filter by Name</h3>
+        <button onclick="testFilter()">Run Test</button>
+        <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Sort by Email DESC</h3>
+        <button onclick="testSort()">Run Test</button>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Combined Filter + Sort + Pagination</h3>
+        <button onclick="testCombined()">Run Test</button>
+        <div id="test4-result" class="result"></div>
+    </div>
+
+    <script>
+        const GRAPHQL_URL = 'http://localhost:4001/graphql';
+
+        async function graphqlRequest(query, variables = {}) {
+            try {
+                const res = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, variables })
+                });
+                const json = await res.json();
+                if (json.errors) {
+                    throw new Error('GraphQL errors: ' + JSON.stringify(json.errors, null, 2));
+                }
+                return json.data;
+            } catch (error) {
+                throw new Error('Error: ' + error.message);
+            }
+        }
+
+        async function testBasicPagination() {
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.textContent = 'Loading...';
+            
+            try {
+                const query = `
+                    query {
+                        contacts(pagination: { page: 1, limit: 1 }) {
+                            contacts { id name email }
+                            total
+                            page
+                            limit
+                            totalPages
+                        }
+                    }
+                `;
+                const result = await graphqlRequest(query);
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = error.message;
+            }
+        }
+
+        async function testFilter() {
+            const resultDiv = document.getElementById('test2-result');
+            resultDiv.textContent = 'Loading...';
+            
+            try {
+                const query = `
+                    query {
+                        contacts(filter: { name: "Ankita" }) {
+                            contacts { id name email }
+                            total
+                        }
+                    }
+                `;
+                const result = await graphqlRequest(query);
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = error.message;
+            }
+        }
+
+        async function testSort() {
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.textContent = 'Loading...';
+            
+            try {
+                const query = `
+                    query {
+                        contacts(sort: { field: email, order: DESC }) {
+                            contacts { id name email }
+                            total
+                        }
+                    }
+                `;
+                const result = await graphqlRequest(query);
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = error.message;
+            }
+        }
+
+        async function testCombined() {
+            const resultDiv = document.getElementById('test4-result');
+            resultDiv.textContent = 'Loading...';
+            
+            try {
+                const query = `
+                    query {
+                        contacts(
+                            filter: { consent: true }
+                            sort: { field: name, order: ASC }
+                            pagination: { page: 1, limit: 10 }
+                        ) {
+                            contacts { id name email consent }
+                            total
+                            page
+                            totalPages
+                        }
+                    }
+                `;
+                const result = await graphqlRequest(query);
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = error.message;
+            }
+        }
+    </script>
+</body>
+</html>
