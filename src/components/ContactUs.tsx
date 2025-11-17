@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
 import {
-  addContact,
-  getContactById,
-  updateContact,
+  useAddContact,
+  useGetContactById,
+  useUpdateContact,
   type Contact,
 } from '../services/contactServices';
 
@@ -27,10 +27,14 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
+  const getContact = useGetContactById();
+  const addContactMutation = useAddContact();
+  const updateContactMutation = useUpdateContact();
+
   useEffect(() => {
     if (isEdit) {
       (async () => {
-        const existing = await getContactById(id!);
+        const existing = await getContact.execute(id!);
         if (existing) {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: contactId, ...rest } = existing;
@@ -41,7 +45,7 @@ const ContactForm: React.FC = () => {
         }
       })();
     }
-  }, [id, isEdit, navigate]);
+  }, [id, isEdit, navigate, getContact]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -71,9 +75,9 @@ const ContactForm: React.FC = () => {
 
     let result: Contact | null = null;
     if (isEdit) {
-      result = await updateContact(id!, formData);
+      result = await updateContactMutation.execute(id!, formData);
     } else {
-      result = await addContact(formData);
+      result = await addContactMutation.execute(formData);
     }
 
     if (!result) {

@@ -21,10 +21,17 @@ interface OpenWeatherAPIResponse {
 export const useWeatherAPI = () => {
   const fetcher = useDataFetcher<WeatherData>();
 
+  // Memoize the API key and base URL
+  const config = useCallback(() => {
+    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
+    const baseUrl = import.meta.env.VITE_WEATHER_API_URL;
+    return { apiKey, baseUrl };
+  }, []);
+
+  // Memoize the fetch function
   const fetchWeather = useCallback(
     async (city = 'Bhubaneshwar'): Promise<WeatherData | null> => {
-      const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-      const baseUrl = import.meta.env.VITE_WEATHER_API_URL;
+      const { apiKey, baseUrl } = config();
 
       if (!apiKey || !baseUrl) {
         console.error('Weather API configuration missing');
@@ -37,21 +44,25 @@ export const useWeatherAPI = () => {
         appid: apiKey,
       };
 
-      const response = await fetcher.get(baseUrl, params);
+      try {
+        const response = await fetcher.get(baseUrl, params);
 
-      if (response) {
-        const data = response as unknown as OpenWeatherAPIResponse;
-        return {
-          temp: data.main.temp,
-          description: data.weather[0].description,
-          city: data.name,
-          icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
-        };
+        if (response) {
+          const data = response as unknown as OpenWeatherAPIResponse;
+          return {
+            temp: data.main.temp,
+            description: data.weather[0].description,
+            city: data.name,
+            icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
+          };
+        }
+      } catch (error) {
+        console.error('Weather API fetch error:', error);
       }
 
       return null;
     },
-    [fetcher],
+    [config, fetcher],
   );
 
   return {
@@ -74,8 +85,16 @@ export const fetchWeatherData = async (city = 'Bhubaneshwar'): Promise<WeatherDa
       return null;
     }
 
-    const url = `${baseUrl}?q=${city}&units=metric&appid=${apiKey}`;
-    const response = await fetch(url);
+    const url = `${baseUrl}?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'omit',
+      mode: 'cors',
+    });
 
     if (!response.ok) {
       throw new Error(`Weather API error: ${response.status}`);
