@@ -1,3 +1,6 @@
+// Initialize Sentry before everything else
+import './sentry.ts';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 

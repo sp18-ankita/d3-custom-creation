@@ -1,45 +1,37 @@
-const ContactFragment = `
-  fragment ContactFields on Contact {
-    id
-    name
-    email
-    phone
-    subject
-    message
-    consent
-  }
-`;
+// import axios from 'axios';
 
-interface Contact {
+// Types
+export interface Contact {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   subject: string;
   message: string;
   consent: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-interface ContactsFilter {
+export interface ContactsFilter {
   name?: string;
   email?: string;
   phone?: string;
   subject?: string;
-  message?: string;
   consent?: boolean;
 }
 
-interface ContactsSort {
-  field: 'name' | 'email' | 'phone' | 'subject' | 'message' | 'consent';
+export interface ContactsSort {
+  field: 'name' | 'email' | 'phone' | 'subject' | 'consent';
   order: 'ASC' | 'DESC';
 }
 
-interface ContactsPagination {
+export interface ContactsPagination {
   page: number;
   limit: number;
 }
 
-interface ContactsResponse {
+export interface ContactsResponse {
   contacts: Contact[];
   total: number;
   page: number;
@@ -47,213 +39,244 @@ interface ContactsResponse {
   totalPages: number;
 }
 
-import { useDataFetcher } from '../hooks/useDataFetcher';
+// Base API configuration (ready for future backend integration)
+// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4001';
 
-const getContactsQuery = `
-  ${ContactFragment}
-  query GetContacts($filter: ContactsFilter, $sort: ContactsSort, $pagination: ContactsPagination) {
-    contacts(filter: $filter, sort: $sort, pagination: $pagination) {
-      contacts {
-        ...ContactFields
-      }
-      total
-      page
-      limit
-      totalPages
+// Note: API client is prepared for future use when connecting to real backend
+// const api = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 10000,
+//   headers: {
+//     'Content-Type': 'application/json',
+//   },
+// });
+
+// Mock data for development (since we don't have a full REST API yet)
+const mockContacts: Contact[] = [
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1-555-0123',
+    subject: 'General Inquiry',
+    message: 'Hello, I would like to know more about your services.',
+    consent: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    phone: '+1-555-0456',
+    subject: 'Support Request',
+    message: 'I need help with my account.',
+    consent: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Bob Johnson',
+    email: 'bob.johnson@example.com',
+    subject: 'Feature Request',
+    message: 'Can you add a dark mode feature?',
+    consent: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+let contactsData = [...mockContacts];
+
+// Helper functions
+const applyFilters = (contacts: Contact[], filter: ContactsFilter): Contact[] => {
+  return contacts.filter(contact => {
+    if (filter.name && !contact.name.toLowerCase().includes(filter.name.toLowerCase())) {
+      return false;
     }
-  }
-`;
-
-const getContactByIdQuery = `
-  ${ContactFragment}
-  query GetContact($id: ID!) {
-    contact(id: $id) {
-      ...ContactFields
+    if (filter.email && !contact.email.toLowerCase().includes(filter.email.toLowerCase())) {
+      return false;
     }
-  }
-`;
-
-const addContactMutation = `
-  ${ContactFragment}
-  mutation AddContact($input: ContactInput!) {
-    addContact(input: $input) {
-      ...ContactFields
+    if (filter.phone && contact.phone && !contact.phone.includes(filter.phone)) {
+      return false;
     }
-  }
-`;
-
-const updateContactMutation = `
-  ${ContactFragment}
-  mutation UpdateContact($id: ID!, $input: ContactInput!) {
-    updateContact(id: $id, input: $input) {
-      ...ContactFields
+    if (filter.subject && !contact.subject.toLowerCase().includes(filter.subject.toLowerCase())) {
+      return false;
     }
-  }
-`;
-
-const deleteContactMutation = `
-  mutation DeleteContact($id: ID!) {
-    deleteContact(id: $id)
-  }
-`;
-
-export function useGetContacts() {
-  const fetcher = useDataFetcher<{ contacts: ContactsResponse }>();
-
-  const execute = async (
-    filter?: ContactsFilter,
-    sort?: ContactsSort,
-    pagination?: ContactsPagination,
-  ): Promise<ContactsResponse | null> => {
-    const result = await fetcher.graphql({
-      query: getContactsQuery,
-      variables: { filter, sort, pagination },
-    });
-    return result?.contacts ?? null;
-  };
-
-  return {
-    ...fetcher,
-    execute,
-  };
-}
-
-export function useGetContactById() {
-  const fetcher = useDataFetcher<{ contact: Contact }>();
-
-  const execute = async (id: string): Promise<Contact | null> => {
-    const result = await fetcher.graphql({
-      query: getContactByIdQuery,
-      variables: { id },
-    });
-    return result?.contact ?? null;
-  };
-
-  return {
-    ...fetcher,
-    execute,
-  };
-}
-
-export function useAddContact() {
-  const fetcher = useDataFetcher<{ addContact: Contact }>();
-
-  const execute = async (input: Omit<Contact, 'id'>): Promise<Contact | null> => {
-    const result = await fetcher.graphql({
-      query: addContactMutation,
-      variables: { input },
-    });
-    return result?.addContact ?? null;
-  };
-
-  return {
-    ...fetcher,
-    execute,
-  };
-}
-
-export function useUpdateContact() {
-  const fetcher = useDataFetcher<{ updateContact: Contact }>();
-
-  const execute = async (id: string, input: Omit<Contact, 'id'>): Promise<Contact | null> => {
-    const result = await fetcher.graphql({
-      query: updateContactMutation,
-      variables: { id, input },
-    });
-    return result?.updateContact ?? null;
-  };
-
-  return {
-    ...fetcher,
-    execute,
-  };
-}
-
-export function useDeleteContact() {
-  const fetcher = useDataFetcher<{ deleteContact: boolean }>();
-
-  const execute = async (id: string): Promise<boolean> => {
-    const result = await fetcher.graphql({
-      query: deleteContactMutation,
-      variables: { id },
-    });
-    return result?.deleteContact ?? false;
-  };
-
-  return {
-    ...fetcher,
-    execute,
-  };
-}
-
-export type { Contact, ContactsFilter, ContactsPagination, ContactsResponse, ContactsSort };
-
-const GRAPHQL_ENDPOINT = 'http://localhost:4001/graphql';
-
-interface GraphQLVariables {
-  id?: string;
-  input?: Omit<Contact, 'id'>;
-  filter?: ContactsFilter;
-  sort?: ContactsSort;
-  pagination?: ContactsPagination;
-}
-
-const dataFetcher = (query: string, variables?: GraphQLVariables) => {
-  return fetch(GRAPHQL_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  }).then(async res => {
-    const data = await res.json();
-    if (data.errors) {
-      throw new Error(data.errors[0]?.message || 'GraphQL Error');
+    if (filter.consent !== undefined && contact.consent !== filter.consent) {
+      return false;
     }
-    return data;
+    return true;
   });
 };
 
+const applySorting = (contacts: Contact[], sort: ContactsSort): Contact[] => {
+  return contacts.sort((a, b) => {
+    let aValue = a[sort.field];
+    let bValue = b[sort.field];
+
+    // Handle undefined values
+    if (aValue === undefined) aValue = '';
+    if (bValue === undefined) bValue = '';
+
+    // Convert to string for comparison
+    const aStr = String(aValue).toLowerCase();
+    const bStr = String(bValue).toLowerCase();
+
+    if (sort.order === 'ASC') {
+      return aStr.localeCompare(bStr);
+    } else {
+      return bStr.localeCompare(aStr);
+    }
+  });
+};
+
+const applyPagination = (contacts: Contact[], pagination: ContactsPagination): Contact[] => {
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + pagination.limit;
+  return contacts.slice(startIndex, endIndex);
+};
+
+// API Functions
 export const getContacts = async (
-  filter?: ContactsFilter,
-  sort?: ContactsSort,
-  pagination?: ContactsPagination,
+  filter: ContactsFilter = {},
+  sort: ContactsSort = { field: 'name', order: 'ASC' },
+  pagination: ContactsPagination = { page: 1, limit: 10 },
 ): Promise<ContactsResponse> => {
-  const result = await dataFetcher(getContactsQuery, { filter, sort, pagination });
-  if (!result.data?.contacts) {
+  try {
+    // In a real application, you would make an API call here
+    // For now, we'll use mock data with client-side filtering
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Apply filters
+    let filteredContacts = applyFilters(contactsData, filter);
+
+    // Apply sorting
+    filteredContacts = applySorting(filteredContacts, sort);
+
+    // Calculate pagination
+    const total = filteredContacts.length;
+    const totalPages = Math.ceil(total / pagination.limit);
+
+    // Apply pagination
+    const contacts = applyPagination(filteredContacts, pagination);
+
+    return {
+      contacts,
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
     throw new Error('Failed to fetch contacts');
   }
-  return result.data.contacts;
 };
 
-export const getContactById = async (id: string): Promise<Contact> => {
-  const result = await dataFetcher(getContactByIdQuery, { id });
-  if (!result.data?.contact) {
-    throw new Error('Failed to fetch contact');
+export const getContact = async (id: string): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const contact = contactsData.find(c => c.id === id);
+    if (!contact) {
+      throw new Error('Contact not found');
+    }
+
+    return contact;
+  } catch (error) {
+    console.error('Error fetching contact:', error);
+    throw error;
   }
-  return result.data.contact;
 };
 
-export const addContact = async (input: Omit<Contact, 'id'>): Promise<Contact> => {
-  const result = await dataFetcher(addContactMutation, { input });
-  if (!result.data?.addContact) {
-    throw new Error('Failed to add contact');
+export const createContact = async (
+  contactData: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>,
+): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const newContact: Contact = {
+      ...contactData,
+      id: Date.now().toString(), // Simple ID generation for demo
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    contactsData.push(newContact);
+    return newContact;
+  } catch (error) {
+    console.error('Error creating contact:', error);
+    throw new Error('Failed to create contact');
   }
-  return result.data.addContact;
 };
 
-export const updateContact = async (id: string, input: Omit<Contact, 'id'>): Promise<Contact> => {
-  const result = await dataFetcher(updateContactMutation, { id, input });
-  if (!result.data?.updateContact) {
-    throw new Error('Failed to update contact');
+export const updateContact = async (
+  id: string,
+  contactData: Partial<Omit<Contact, 'id' | 'createdAt'>>,
+): Promise<Contact> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const contactIndex = contactsData.findIndex(c => c.id === id);
+    if (contactIndex === -1) {
+      throw new Error('Contact not found');
+    }
+
+    const updatedContact: Contact = {
+      ...contactsData[contactIndex],
+      ...contactData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    contactsData[contactIndex] = updatedContact;
+    return updatedContact;
+  } catch (error) {
+    console.error('Error updating contact:', error);
+    throw error;
   }
-  return result.data.updateContact;
 };
 
-export const deleteContact = async (id: string): Promise<boolean> => {
-  const result = await dataFetcher(deleteContactMutation, { id });
-  return result.data?.deleteContact ?? false;
+export const deleteContact = async (id: string): Promise<void> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const contactIndex = contactsData.findIndex(c => c.id === id);
+    if (contactIndex === -1) {
+      throw new Error('Contact not found');
+    }
+
+    contactsData.splice(contactIndex, 1);
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+    throw error;
+  }
+};
+
+// Utility function to reset data (useful for testing)
+export const resetContactsData = (): void => {
+  contactsData = [...mockContacts];
+};
+
+// Aliases for backward compatibility
+export const addContact = createContact;
+export const getContactById = getContact;
+
+export default {
+  getContacts,
+  getContact,
+  createContact,
+  updateContact,
+  deleteContact,
+  resetContactsData,
+  // Add aliases to default export as well
+  addContact,
+  getContactById,
 };
