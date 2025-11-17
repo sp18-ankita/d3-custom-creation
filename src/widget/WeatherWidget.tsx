@@ -1,40 +1,41 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-
-interface WeatherData {
-  temp: number;
-  description: string;
-  city: string;
-  icon: string;
-}
+import { useWeatherAPI } from '../services/weatherService';
 
 export const WeatherWidget: React.FC = () => {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const { fetchWeather, data: weather, loading, error } = useWeatherAPI();
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-        const city = 'Bhubaneshwar';
-        const url = `${import.meta.env.VITE_WEATHER_API_URL}?q=${city}&units=metric&appid=${apiKey}`;
-        const response = await axios.get(url);
-        const data = response.data;
+    let timeoutId: NodeJS.Timeout;
 
-        setWeather({
-          temp: data.main.temp,
-          description: data.weather[0].description,
-          city: data.name,
-          icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
-        });
-      } catch (error) {
-        console.error('Weather API error:', error);
+    const fetchData = async () => {
+      try {
+        await fetchWeather('Bhubaneshwar');
+      } catch (err) {
+        console.error('Weather fetch error:', err);
+        if (retryCount < maxRetries) {
+          timeoutId = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 5000); // Retry after 5 seconds
+        }
       }
     };
 
-    fetchWeather();
-  }, []);
+    fetchData();
 
-  if (!weather) return null;
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [fetchWeather, retryCount]); // Only retry when fetchWeather changes or retryCount updates
+
+  // Don't render anything if there's an error and we've exceeded retries, or if there's no data
+  if ((error && retryCount >= maxRetries) || !weather) return null;
+
+  // Show loading state only on first load
+  if (loading && !weather) return null;
 
   return (
     <div

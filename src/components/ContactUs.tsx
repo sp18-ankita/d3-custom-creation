@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
 import {
-  addContact,
-  getContactById,
-  updateContact,
+  useAddContact,
+  useGetContactById,
+  useUpdateContact,
   type Contact,
 } from '../services/contactServices';
 
@@ -27,19 +27,25 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
+  const getContact = useGetContactById();
+  const addContactMutation = useAddContact();
+  const updateContactMutation = useUpdateContact();
+
   useEffect(() => {
     if (isEdit) {
-      const existing = getContactById(id!);
-      if (existing) {
-        const { id, ...rest } = existing;
-        console.log({ id });
-        setFormData(rest);
-      } else {
-        alert('Contact not found!');
-        navigate('/contacts');
-      }
+      (async () => {
+        const existing = await getContact.execute(id!);
+        if (existing) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: contactId, ...rest } = existing;
+          setFormData(rest);
+        } else {
+          alert('Contact not found!');
+          navigate('/contacts/new');
+        }
+      })();
     }
-  }, [id, isEdit, navigate]);
+  }, [id, isEdit, navigate, getContact]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -63,11 +69,16 @@ const ContactForm: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const result = isEdit ? updateContact(id!, formData) : addContact(formData);
+    let result: Contact | null = null;
+    if (isEdit) {
+      result = await updateContactMutation.execute(id!, formData);
+    } else {
+      result = await addContactMutation.execute(formData);
+    }
 
     if (!result) {
       setErrors({ email: 'Email must be unique' });

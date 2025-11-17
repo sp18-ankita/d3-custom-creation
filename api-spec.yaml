@@ -1,0 +1,835 @@
+openapi: 3.0.3
+info:
+  title: D3 Custom Chart & Contact Management API
+  description: |
+    API for managing contacts and serving chart data in the D3 Custom Chart Creation system.
+    
+    ## Features
+    - Full CRUD operations for contact management
+    - Data validation and error handling
+    - Weather widget integration
+    - GraphQL alternative endpoints
+    
+    ## Authentication
+    Future versions will include JWT-based authentication.
+    
+    ## Rate Limiting
+    API endpoints are rate-limited to prevent abuse:
+    - 100 requests per minute per IP address
+    - 1000 requests per hour per user (when authenticated)
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: dev@company.com
+    url: https://github.com/sp18-ankita/d3-custom-creation
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: https://staging-api.d3-charts.com/api
+    description: Staging server
+  - url: https://api.d3-charts.com/api
+    description: Production server
+
+tags:
+  - name: Contacts
+    description: Contact management operations
+  - name: Weather
+    description: Weather widget data
+  - name: Health
+    description: System health and monitoring
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the API
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-09-04T10:30:00Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /contacts:
+    get:
+      summary: Get all contacts
+      description: Retrieve a list of all contacts with optional filtering and pagination
+      operationId: getContacts
+      tags:
+        - Contacts
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          example: 10
+        - name: search
+          in: query
+          description: Search term to filter contacts by name, email, or subject
+          required: false
+          schema:
+            type: string
+            minLength: 2
+          example: "john"
+        - name: sortBy
+          in: query
+          description: Field to sort by
+          required: false
+          schema:
+            type: string
+            enum: [name, email, createdAt, updatedAt]
+            default: name
+          example: "name"
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          example: "asc"
+      responses:
+        '200':
+          description: List of contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  - id: "_a1b2c3d4"
+                    name: "John Doe"
+                    email: "john.doe@example.com"
+                    phone: "+1234567890"
+                    subject: "Business Inquiry"
+                    message: "Interested in your services and would like to discuss potential collaboration opportunities."
+                    consent: true
+                  - id: "_e5f6g7h8"
+                    name: "Jane Smith"
+                    email: "jane.smith@example.com"
+                    phone: "+1987654321"
+                    subject: "Support Request"
+                    message: "Having trouble with the application setup and need assistance."
+                    consent: true
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 2
+                  totalPages: 1
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: "VALIDATION_ERROR"
+                message: "Invalid query parameters"
+                validationErrors:
+                  - field: "page"
+                    message: "Page must be a positive integer"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "INTERNAL_SERVER_ERROR"
+                message: "An unexpected error occurred while retrieving contacts"
+    
+    post:
+      summary: Create a new contact
+      description: Create a new contact with the provided information
+      operationId: createContact
+      tags:
+        - Contacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+            example:
+              name: "Alice Johnson"
+              email: "alice.johnson@example.com"
+              phone: "+1555123456"
+              subject: "Partnership Opportunity"
+              message: "We are interested in exploring a partnership with your company and would like to schedule a meeting to discuss this further."
+              consent: true
+      responses:
+        '201':
+          description: Contact created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contact'
+                  message:
+                    type: string
+                    example: "Contact created successfully"
+              example:
+                data:
+                  id: "_i9j0k1l2"
+                  name: "Alice Johnson"
+                  email: "alice.johnson@example.com"
+                  phone: "+1555123456"
+                  subject: "Partnership Opportunity"
+                  message: "We are interested in exploring a partnership with your company and would like to schedule a meeting to discuss this further."
+                  consent: true
+                message: "Contact created successfully"
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: "VALIDATION_ERROR"
+                message: "Input validation failed"
+                validationErrors:
+                  - field: "email"
+                    message: "Invalid email format"
+                  - field: "message"
+                    message: "Message must be at least 10 characters long"
+        '409':
+          description: Contact with email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "DUPLICATE_EMAIL"
+                message: "A contact with this email address already exists"
+                details:
+                  email: "alice.johnson@example.com"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "RATE_LIMIT_EXCEEDED"
+                message: "Too many requests. Please try again later."
+
+  /contacts/{id}:
+    get:
+      summary: Get contact by ID
+      description: Retrieve a specific contact by its unique identifier
+      operationId: getContactById
+      tags:
+        - Contacts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the contact
+          schema:
+            type: string
+            pattern: '^_[a-f0-9]{8}$'
+          example: "_a1b2c3d4"
+      responses:
+        '200':
+          description: Contact found and retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contact'
+              example:
+                data:
+                  id: "_a1b2c3d4"
+                  name: "John Doe"
+                  email: "john.doe@example.com"
+                  phone: "+1234567890"
+                  subject: "Business Inquiry"
+                  message: "Interested in your services and would like to discuss potential collaboration opportunities."
+                  consent: true
+        '400':
+          description: Invalid contact ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: "VALIDATION_ERROR"
+                message: "Invalid contact ID format"
+                validationErrors:
+                  - field: "id"
+                    message: "Contact ID must be in format '_xxxxxxxx' where x is a hexadecimal character"
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "CONTACT_NOT_FOUND"
+                message: "Contact with the specified ID was not found"
+                details:
+                  contactId: "_a1b2c3d4"
+    
+    put:
+      summary: Update contact by ID
+      description: Update an existing contact with new information
+      operationId: updateContact
+      tags:
+        - Contacts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the contact to update
+          schema:
+            type: string
+            pattern: '^_[a-f0-9]{8}$'
+          example: "_a1b2c3d4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+            example:
+              name: "John A. Doe"
+              email: "john.doe.updated@example.com"
+              phone: "+1234567890"
+              subject: "Updated Business Inquiry"
+              message: "Updated message with additional information about our business requirements and timeline."
+              consent: true
+      responses:
+        '200':
+          description: Contact updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contact'
+                  message:
+                    type: string
+                    example: "Contact updated successfully"
+              example:
+                data:
+                  id: "_a1b2c3d4"
+                  name: "John A. Doe"
+                  email: "john.doe.updated@example.com"
+                  phone: "+1234567890"
+                  subject: "Updated Business Inquiry"
+                  message: "Updated message with additional information about our business requirements and timeline."
+                  consent: true
+                message: "Contact updated successfully"
+        '400':
+          description: Invalid input data or contact ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "CONTACT_NOT_FOUND"
+                message: "Contact with the specified ID was not found"
+        '409':
+          description: Email already exists for another contact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "DUPLICATE_EMAIL"
+                message: "Another contact with this email address already exists"
+                details:
+                  email: "john.doe.updated@example.com"
+                  existingContactId: "_e5f6g7h8"
+    
+    delete:
+      summary: Delete contact by ID
+      description: Permanently delete a contact from the system
+      operationId: deleteContact
+      tags:
+        - Contacts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the contact to delete
+          schema:
+            type: string
+            pattern: '^_[a-f0-9]{8}$'
+          example: "_a1b2c3d4"
+      responses:
+        '200':
+          description: Contact deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Contact deleted successfully"
+                  deletedContactId:
+                    type: string
+                    example: "_a1b2c3d4"
+              example:
+                success: true
+                message: "Contact deleted successfully"
+                deletedContactId: "_a1b2c3d4"
+        '400':
+          description: Invalid contact ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "CONTACT_NOT_FOUND"
+                message: "Contact with the specified ID was not found or has already been deleted"
+
+  /weather:
+    get:
+      summary: Get weather information
+      description: Retrieve current weather information for a specified location
+      operationId: getWeather
+      tags:
+        - Weather
+      parameters:
+        - name: location
+          in: query
+          required: false
+          description: Location name or coordinates for weather data
+          schema:
+            type: string
+            default: "New York"
+            minLength: 2
+            maxLength: 100
+          example: "San Francisco"
+        - name: units
+          in: query
+          required: false
+          description: Temperature units
+          schema:
+            type: string
+            enum: [celsius, fahrenheit, kelvin]
+            default: celsius
+          example: "celsius"
+      responses:
+        '200':
+          description: Weather data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Weather'
+              example:
+                data:
+                  location: "San Francisco"
+                  temperature: 22.5
+                  condition: "Partly Cloudy"
+                  humidity: 65
+                  windSpeed: 10.2
+                  pressure: 1013.25
+                  visibility: 16.1
+                  uvIndex: 5
+                  lastUpdated: "2025-09-04T10:30:00Z"
+        '400':
+          description: Invalid location parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: "VALIDATION_ERROR"
+                message: "Invalid location parameter"
+                validationErrors:
+                  - field: "location"
+                    message: "Location must be between 2 and 100 characters"
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "LOCATION_NOT_FOUND"
+                message: "The specified location could not be found"
+                details:
+                  location: "InvalidCityName"
+        '503':
+          description: Weather service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "SERVICE_UNAVAILABLE"
+                message: "Weather service is temporarily unavailable. Please try again later."
+
+components:
+  schemas:
+    Contact:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - phone
+        - subject
+        - message
+        - consent
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the contact (auto-generated)
+          pattern: '^_[a-f0-9]{8}$'
+          example: "_a1b2c3d4"
+          readOnly: true
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Full name of the contact
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          maxLength: 320
+          description: Email address of the contact (must be unique)
+          example: "john.doe@example.com"
+        phone:
+          type: string
+          pattern: '^\+?\d{7,15}$'
+          description: Phone number of the contact (international format preferred)
+          example: "+1234567890"
+        subject:
+          type: string
+          minLength: 5
+          maxLength: 200
+          description: Subject of the inquiry or message
+          example: "Business Inquiry"
+        message:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Detailed message from the contact
+          example: "I am interested in your services and would like to know more about pricing and availability."
+        consent:
+          type: boolean
+          description: Whether the contact has given consent for data processing (required for GDPR compliance)
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the contact was created
+          example: "2025-09-04T10:30:00Z"
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the contact was last updated
+          example: "2025-09-04T10:30:00Z"
+          readOnly: true
+
+    ContactInput:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - subject
+        - message
+        - consent
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Full name of the contact
+          example: "Jane Smith"
+        email:
+          type: string
+          format: email
+          maxLength: 320
+          description: Email address of the contact
+          example: "jane.smith@example.com"
+        phone:
+          type: string
+          pattern: '^\+?\d{7,15}$'
+          description: Phone number of the contact
+          example: "+1987654321"
+        subject:
+          type: string
+          minLength: 5
+          maxLength: 200
+          description: Subject of the inquiry
+          example: "Support Request"
+        message:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Detailed message from the contact
+          example: "I need help with the application setup and configuration. Could you please provide guidance?"
+        consent:
+          type: boolean
+          description: Consent for data processing
+          example: true
+
+    Weather:
+      type: object
+      required:
+        - location
+        - temperature
+        - condition
+      properties:
+        location:
+          type: string
+          description: Location name
+          example: "San Francisco"
+        temperature:
+          type: number
+          description: Current temperature
+          example: 22.5
+        condition:
+          type: string
+          description: Weather condition description
+          example: "Partly Cloudy"
+        humidity:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Humidity percentage
+          example: 65
+        windSpeed:
+          type: number
+          minimum: 0
+          description: Wind speed in km/h
+          example: 10.2
+        pressure:
+          type: number
+          description: Atmospheric pressure in hPa
+          example: 1013.25
+        visibility:
+          type: number
+          description: Visibility in kilometers
+          example: 16.1
+        uvIndex:
+          type: number
+          minimum: 0
+          maximum: 11
+          description: UV index
+          example: 5
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Timestamp of last weather data update
+          example: "2025-09-04T10:30:00Z"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Number of items per page
+          example: 10
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items
+          example: 25
+        totalPages:
+          type: integer
+          minimum: 0
+          description: Total number of pages
+          example: 3
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code for programmatic handling
+          example: "CONTACT_NOT_FOUND"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Contact with the specified ID was not found"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details and context
+          example:
+            contactId: "_a1b2c3d4"
+            timestamp: "2025-09-04T10:30:00Z"
+        requestId:
+          type: string
+          description: Unique request identifier for debugging
+          example: "req_abc123def456"
+
+    ValidationError:
+      type: object
+      required:
+        - error
+        - message
+        - validationErrors
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: General validation error message
+          example: "Input validation failed"
+        validationErrors:
+          type: array
+          description: List of specific validation errors
+          items:
+            type: object
+            required:
+              - field
+              - message
+            properties:
+              field:
+                type: string
+                description: Field name that failed validation
+                example: "email"
+              message:
+                type: string
+                description: Specific validation error message
+                example: "Invalid email format"
+              value:
+                type: string
+                description: The value that failed validation
+                example: "invalid-email"
+        requestId:
+          type: string
+          description: Unique request identifier for debugging
+          example: "req_abc123def456"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated requests (future implementation)
+    
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authenticated requests (future implementation)
+
+# Security will be implemented in future versions
+# security:
+#   - bearerAuth: []
+#   - apiKey: []
+
+# Webhook support for real-time notifications (future enhancement)
+webhooks:
+  contactCreated:
+    post:
+      summary: Contact created webhook
+      description: Triggered when a new contact is created
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  example: "contact.created"
+                timestamp:
+                  type: string
+                  format: date-time
+                  example: "2025-09-04T10:30:00Z"
+                data:
+                  $ref: '#/components/schemas/Contact'
+      responses:
+        '200':
+          description: Webhook received successfully

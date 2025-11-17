@@ -14,35 +14,54 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-test('shows empty state when no contacts', () => {
-  mockedService.getContacts.mockReturnValue([]);
+test('shows empty state when no contacts', async () => {
+  mockedService.getContacts.mockResolvedValue({
+    contacts: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  });
   render(
     <MemoryRouter>
       <ContactList />
     </MemoryRouter>,
   );
-  expect(screen.getByText(/No contacts submitted yet/i)).toBeInTheDocument();
+  expect(await screen.findByText(/No contacts found matching your criteria/i)).toBeInTheDocument();
 });
 
-test('renders contact list and triggers delete', () => {
-  mockedService.getContacts.mockReturnValue([
-    {
-      id: '1',
-      name: 'John',
-      email: 'john@example.com',
-      phone: '123456',
-      subject: 'Test',
-      message: 'Hello',
-      consent: true,
-    },
-  ]);
+test('renders contact list and triggers delete', async () => {
+  mockedService.getContacts.mockResolvedValue({
+    contacts: [
+      {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+        phone: '123456',
+        subject: 'Test',
+        message: 'Hello',
+        consent: true,
+      },
+    ],
+    total: 1,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+  mockedService.deleteContact.mockResolvedValue(true);
+
+  // Mock window.confirm to return true
+  window.confirm = vi.fn().mockReturnValue(true);
+  // Mock window.alert
+  window.alert = vi.fn();
+
   render(
     <MemoryRouter>
       <ContactList />
     </MemoryRouter>,
   );
 
-  expect(screen.getByText('John')).toBeInTheDocument();
+  expect(await screen.findByText('John')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /delete/i }));
   expect(mockedService.deleteContact).toHaveBeenCalledWith('1');
 });
