@@ -8,6 +8,7 @@ import { GenericChartRenderer } from './components/ChartRenderer/ChartRenderer';
 import { Speedometer } from './components/charts/Speedometer';
 import { ChartTypeSelector } from './components/ChartTypeSelector';
 import { JsonInput } from './components/JsonInput';
+import SentryTest from './components/SentryTest';
 import { SpeedometerControls } from './components/SpeedometerControls';
 import { useChartContext } from './hooks/useChartContext';
 import { WeatherWidget } from './widget/WeatherWidget';
@@ -89,6 +90,7 @@ export const AppContent: React.FC = () => {
   return (
     <div>
       <WeatherWidget />
+      <SentryTest />
       <div
         className="app-container"
         style={{ padding: 20, fontFamily: 'Arial, sans-serif', position: 'relative' }}
