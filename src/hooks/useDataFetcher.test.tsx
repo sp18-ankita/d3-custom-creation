@@ -139,7 +139,7 @@ describe('useDataFetcher', () => {
       });
 
       expect(result.current.data).toEqual(mockData);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:4001/graphql', {
+      expect(mockFetch).toHaveBeenCalledWith(import.meta.env.VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, variables }),

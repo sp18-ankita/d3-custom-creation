@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
-import { logPageView, logUserAction } from '../monitoring';
+import { logUserAction } from '../monitoring';
 import {
   addContact,
   getContactById,
@@ -29,31 +29,17 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
-  // Log page view on component mount
-  useEffect(() => {
-    logPageView(isEdit ? 'Contact Edit' : 'Contact Form', {
-      mode: isEdit ? 'edit' : 'create',
-      contactId: id,
-    });
-  }, [isEdit, id]);
-
   useEffect(() => {
     if (isEdit) {
       (async () => {
         try {
           const existing = await getContactById(id!);
-          if (existing) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id: contactId, ...rest } = existing;
-            setFormData(rest);
-            logUserAction('Contact Data Loaded', { contactId: id });
-          } else {
-            alert('Contact not found!');
-            logUserAction('Contact Load Failed', { contactId: id, reason: 'not found' });
-            navigate('/contacts/new');
-          }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: contactId, ...rest } = existing;
+          setFormData(rest);
         } catch (error) {
-          logUserAction('Contact Load Failed', { contactId: id, error: String(error) });
+          console.error('Error fetching contact:', error);
+          alert('Contact not found!');
           navigate('/contacts/new');
         }
       })();
@@ -84,34 +70,19 @@ const ContactForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      logUserAction('Form Validation Failed', {
-        mode: isEdit ? 'edit' : 'create',
-        errors: Object.keys(errors),
-      });
-      return;
-    }
+    if (!validate()) return;
 
     logUserAction('Form Submission Attempted', {
       mode: isEdit ? 'edit' : 'create',
       contactId: id,
     });
 
-    let result: Contact | null = null;
     try {
+      let result: Contact;
       if (isEdit) {
         result = await updateContact(id!, formData);
       } else {
         result = await addContact(formData);
-      }
-
-      if (!result) {
-        setErrors({ email: 'Email must be unique' });
-        logUserAction('Form Submission Failed', {
-          mode: isEdit ? 'edit' : 'create',
-          reason: 'duplicate email',
-        });
-        return;
       }
 
       logUserAction('Form Submission Successful', {
@@ -122,6 +93,7 @@ const ContactForm: React.FC = () => {
       setSubmitted(true);
       setTimeout(() => navigate('/contacts'), 1200);
     } catch (error) {
+      setErrors({ email: 'Email must be unique' });
       logUserAction('Form Submission Failed', {
         mode: isEdit ? 'edit' : 'create',
         error: String(error),
