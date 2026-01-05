@@ -5,9 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
 import { logPageView, logUserAction } from '../monitoring';
 import {
-  addContact,
-  getContactById,
-  updateContact,
+  useAddContact,
+  useGetContactById,
+  useUpdateContact,
   type Contact,
 } from '../services/contactServices';
 import ErrorBoundary from './ErrorBoundary';
@@ -29,36 +29,25 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
-  // Log page view on component mount
-  useEffect(() => {
-    logPageView(isEdit ? 'Contact Edit' : 'Contact Form', {
-      mode: isEdit ? 'edit' : 'create',
-      contactId: id,
-    });
-  }, [isEdit, id]);
+  const getContact = useGetContactById();
+  const addContactMutation = useAddContact();
+  const updateContactMutation = useUpdateContact();
 
   useEffect(() => {
     if (isEdit) {
       (async () => {
-        try {
-          const existing = await getContactById(id!);
-          if (existing) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id: contactId, ...rest } = existing;
-            setFormData(rest);
-            logUserAction('Contact Data Loaded', { contactId: id });
-          } else {
-            alert('Contact not found!');
-            logUserAction('Contact Load Failed', { contactId: id, reason: 'not found' });
-            navigate('/contacts/new');
-          }
-        } catch (error) {
-          logUserAction('Contact Load Failed', { contactId: id, error: String(error) });
+        const existing = await getContact.execute(id!);
+        if (existing) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: contactId, ...rest } = existing;
+          setFormData(rest);
+        } else {
+          alert('Contact not found!');
           navigate('/contacts/new');
         }
       })();
     }
-  }, [id, isEdit, navigate]);
+  }, [id, isEdit, navigate, getContact]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -84,11 +73,17 @@ const ContactForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      logUserAction('Form Validation Failed', {
-        mode: isEdit ? 'edit' : 'create',
-        errors: Object.keys(errors),
-      });
+    if (!validate()) return;
+
+    let result: Contact | null = null;
+    if (isEdit) {
+      result = await updateContactMutation.execute(id!, formData);
+    } else {
+      result = await addContactMutation.execute(formData);
+    }
+
+    if (!result) {
+      setErrors({ email: 'Email must be unique' });
       return;
     }
 
