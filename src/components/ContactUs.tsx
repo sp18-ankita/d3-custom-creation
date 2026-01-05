@@ -5,9 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
 import { logUserAction } from '../monitoring';
 import {
-  useAddContact,
-  useGetContactById,
-  useUpdateContact,
+  addContact,
+  getContactById,
+  updateContact,
   type Contact,
 } from '../services/contactServices';
 import ErrorBoundary from './ErrorBoundary';
@@ -29,25 +29,22 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
-  const getContact = useGetContactById();
-  const addContactMutation = useAddContact();
-  const updateContactMutation = useUpdateContact();
-
   useEffect(() => {
     if (isEdit) {
       (async () => {
-        const existing = await getContact.execute(id!);
-        if (existing) {
+        try {
+          const existing = await getContactById(id!);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: contactId, ...rest } = existing;
           setFormData(rest);
-        } else {
+        } catch (error) {
+          console.error('Error fetching contact:', error);
           alert('Contact not found!');
           navigate('/contacts/new');
         }
       })();
     }
-  }, [id, isEdit, navigate, getContact]);
+  }, [id, isEdit, navigate]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -75,38 +72,17 @@ const ContactForm: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
 
-    let result: Contact | null = null;
-    if (isEdit) {
-      result = await updateContactMutation.execute(id!, formData);
-    } else {
-      result = await addContactMutation.execute(formData);
-    }
-
-    if (!result) {
-      setErrors({ email: 'Email must be unique' });
-      return;
-    }
-
     logUserAction('Form Submission Attempted', {
       mode: isEdit ? 'edit' : 'create',
       contactId: id,
     });
 
-    let result: Contact | null = null;
     try {
+      let result: Contact;
       if (isEdit) {
         result = await updateContact(id!, formData);
       } else {
         result = await addContact(formData);
-      }
-
-      if (!result) {
-        setErrors({ email: 'Email must be unique' });
-        logUserAction('Form Submission Failed', {
-          mode: isEdit ? 'edit' : 'create',
-          reason: 'duplicate email',
-        });
-        return;
       }
 
       logUserAction('Form Submission Successful', {
@@ -117,6 +93,7 @@ const ContactForm: React.FC = () => {
       setSubmitted(true);
       setTimeout(() => navigate('/contacts'), 1200);
     } catch (error) {
+      setErrors({ email: 'Email must be unique' });
       logUserAction('Form Submission Failed', {
         mode: isEdit ? 'edit' : 'create',
         error: String(error),

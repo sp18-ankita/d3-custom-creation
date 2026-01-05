@@ -46,43 +46,19 @@ export const useWeatherAPI = () => {
         return null;
       }
 
-      const params = {
-        q: city,
-        units: 'metric',
-        appid: apiKey,
-      };
-
-      try {
-        const response = await fetcher.get(baseUrl, params);
-
-        if (response) {
-          const data = response as unknown as OpenWeatherAPIResponse;
-          return {
-            temp: data.main.temp,
-            description: data.weather[0].description,
-            city: data.name,
-            icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
-          };
-        }
-      } catch (error) {
-        console.error('Weather API fetch error:', error);
-      }
+      const cacheKey = city;
+      const now = Date.now();
 
       // Rate limiting
-      const now = Date.now();
       if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
         console.log('Rate limiting: too many requests, using cached or returning null');
+        const cached = weatherCache.get(cacheKey);
         return cached?.data || null;
       }
 
       try {
         requestInProgress.current = true;
         lastRequestTime = now;
-
-        // Use environment variables or fallback to direct API
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY || 'f7429ca057dcb2b75a0e591ee9743a7e';
-        const baseUrl =
-          import.meta.env.VITE_WEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather';
 
         const params = {
           q: city,

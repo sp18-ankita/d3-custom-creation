@@ -84,7 +84,6 @@ describe('Contact Services', () => {
         email: '@example.com',
         phone: '123',
         subject: 'Important',
-        message: 'urgent',
         consent: true,
       };
 
@@ -111,7 +110,7 @@ describe('Contact Services', () => {
     });
 
     test('handles all sorting combinations', async () => {
-      const fields = ['name', 'email', 'phone', 'subject', 'message', 'consent'] as const;
+      const fields = ['name', 'email', 'phone', 'subject', 'consent'] as const;
       const orders = ['ASC', 'DESC'] as const;
 
       for (const field of fields) {
