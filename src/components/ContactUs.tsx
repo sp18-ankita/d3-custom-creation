@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
-import { logPageView, logUserAction } from '../monitoring';
+import { logUserAction } from '../monitoring';
 import {
   useAddContact,
   useGetContactById,

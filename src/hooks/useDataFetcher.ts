@@ -152,16 +152,6 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
     [defaultHeaders],
   );
 
-  // Helper function to determine if an error is retryable
-  const isRetryableError = (error: unknown): boolean => {
-    if (error instanceof ApiError && error.code) {
-      // Retry on 5xx server errors and some 4xx errors
-      const statusCode = parseInt(error.code);
-      return statusCode >= 500 || statusCode === 429 || statusCode === 408;
-    }
-    return false;
-  };
-
   // Main execution function with retry logic
   const executeWithRetry = useCallback(
     async (requestConfig: RequestConfig, attempt = 0): Promise<T> => {

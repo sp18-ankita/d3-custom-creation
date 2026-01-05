@@ -17,7 +17,6 @@ interface OpenWeatherAPIResponse {
 
 // Cache for weather data to prevent excessive API calls
 const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 // Rate limiting
 let lastRequestTime = 0;
