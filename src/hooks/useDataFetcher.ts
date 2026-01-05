@@ -171,6 +171,7 @@ export const useDataFetcher = <T = unknown>(options: UseDataFetcherOptions = {})
           await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
           return executeWithRetry(requestConfig, attempt + 1);
         }
+
         throw error;
       }
     },

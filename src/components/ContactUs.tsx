@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../assets/styles/contactForm.css';
+import { logUserAction } from '../monitoring';
 import {
-  useAddContact,
-  useGetContactById,
-  useUpdateContact,
+  addContact,
+  getContactById,
+  updateContact,
   type Contact,
 } from '../services/contactServices';
+import ErrorBoundary from './ErrorBoundary';
 
 const initialState: Omit<Contact, 'id'> = {
   name: '',
@@ -27,25 +29,22 @@ const ContactForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const isEdit = !!id;
 
-  const getContact = useGetContactById();
-  const addContactMutation = useAddContact();
-  const updateContactMutation = useUpdateContact();
-
   useEffect(() => {
     if (isEdit) {
       (async () => {
-        const existing = await getContact.execute(id!);
-        if (existing) {
+        try {
+          const existing = await getContactById(id!);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: contactId, ...rest } = existing;
           setFormData(rest);
-        } else {
+        } catch (error) {
+          console.error('Error fetching contact:', error);
           alert('Contact not found!');
           navigate('/contacts/new');
         }
       })();
     }
-  }, [id, isEdit, navigate, getContact]);
+  }, [id, isEdit, navigate]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -73,20 +72,33 @@ const ContactForm: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
 
-    let result: Contact | null = null;
-    if (isEdit) {
-      result = await updateContactMutation.execute(id!, formData);
-    } else {
-      result = await addContactMutation.execute(formData);
-    }
+    logUserAction('Form Submission Attempted', {
+      mode: isEdit ? 'edit' : 'create',
+      contactId: id,
+    });
 
-    if (!result) {
+    try {
+      let result: Contact;
+      if (isEdit) {
+        result = await updateContact(id!, formData);
+      } else {
+        result = await addContact(formData);
+      }
+
+      logUserAction('Form Submission Successful', {
+        mode: isEdit ? 'edit' : 'create',
+        contactId: result.id,
+      });
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/contacts'), 1200);
+    } catch (error) {
       setErrors({ email: 'Email must be unique' });
-      return;
+      logUserAction('Form Submission Failed', {
+        mode: isEdit ? 'edit' : 'create',
+        error: String(error),
+      });
     }
-
-    setSubmitted(true);
-    setTimeout(() => navigate('/contacts'), 1200);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -99,72 +111,76 @@ const ContactForm: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="contact-success">
-        {isEdit ? 'Contact updated!' : 'Thank you for contacting us!'}
-      </div>
+      <ErrorBoundary pageName="Contact Success">
+        <div className="contact-success">
+          {isEdit ? 'Contact updated!' : 'Thank you for contacting us!'}
+        </div>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="contact-form">
-      <h2>{isEdit ? 'Edit Contact' : 'Contact Us'}</h2>
+    <ErrorBoundary pageName={isEdit ? 'Contact Edit' : 'Contact Form'}>
+      <form onSubmit={handleSubmit} className="contact-form">
+        <h2>{isEdit ? 'Edit Contact' : 'Contact Us'}</h2>
 
-      {[
-        { label: 'Full Name', name: 'name', type: 'text' },
-        { label: 'Email', name: 'email', type: 'email' },
-        { label: 'Phone (optional)', name: 'phone', type: 'text' },
-        { label: 'Subject', name: 'subject', type: 'text' },
-      ].map(({ label, name, type }) => (
-        <div className="form-group" key={name}>
-          <label htmlFor={name}>{label}</label>
-          <input
-            type={type}
-            id={name}
-            name={name}
-            data-testid={name}
-            value={
-              typeof formData[name as keyof typeof formData] === 'boolean'
-                ? ''
-                : String(formData[name as keyof typeof formData] ?? '')
-            }
+        {[
+          { label: 'Full Name', name: 'name', type: 'text' },
+          { label: 'Email', name: 'email', type: 'email' },
+          { label: 'Phone (optional)', name: 'phone', type: 'text' },
+          { label: 'Subject', name: 'subject', type: 'text' },
+        ].map(({ label, name, type }) => (
+          <div className="form-group" key={name}>
+            <label htmlFor={name}>{label}</label>
+            <input
+              type={type}
+              id={name}
+              name={name}
+              data-testid={name}
+              value={
+                typeof formData[name as keyof typeof formData] === 'boolean'
+                  ? ''
+                  : String(formData[name as keyof typeof formData] ?? '')
+              }
+              onChange={handleChange}
+            />
+            {errors[name] && <p className="error-text">{errors[name]}</p>}
+          </div>
+        ))}
+
+        <div className="form-group">
+          <label htmlFor="message">Message</label>
+          <textarea
+            id="message"
+            name="message"
+            data-testid="message"
+            value={formData.message}
             onChange={handleChange}
+            rows={4}
           />
-          {errors[name] && <p className="error-text">{errors[name]}</p>}
+          {errors.message && <p className="error-text">{errors.message}</p>}
         </div>
-      ))}
 
-      <div className="form-group">
-        <label htmlFor="message">Message</label>
-        <textarea
-          id="message"
-          name="message"
-          data-testid="message"
-          value={formData.message}
-          onChange={handleChange}
-          rows={4}
-        />
-        {errors.message && <p className="error-text">{errors.message}</p>}
-      </div>
+        <div className="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              name="consent"
+              data-testid="consent"
+              checked={formData.consent}
+              onChange={handleChange}
+              style={{ width: 'auto', marginRight: '0.5rem' }}
+            />
+            <span>I agree to be contacted</span>
+          </label>
+          {errors.consent && <p className="error-text">{errors.consent}</p>}
+        </div>
 
-      <div className="form-group checkbox">
-        <label>
-          <input
-            type="checkbox"
-            name="consent"
-            data-testid="consent"
-            checked={formData.consent}
-            onChange={handleChange}
-            style={{ width: 'auto', marginRight: '0.5rem' }}
-          />
-          <span>I agree to be contacted</span>
-        </label>
-        {errors.consent && <p className="error-text">{errors.consent}</p>}
-      </div>
-
-      <button type="submit" className="submit-button">
-        {isEdit ? 'Update Contact' : 'Submit Message'}
-      </button>
-    </form>
+        <button type="submit" className="submit-button">
+          {isEdit ? 'Update Contact' : 'Submit Message'}
+        </button>
+      </form>
+    </ErrorBoundary>
   );
 };
 
