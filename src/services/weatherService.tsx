@@ -17,7 +17,6 @@ interface OpenWeatherAPIResponse {
 
 // Cache for weather data to prevent excessive API calls
 const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 // Rate limiting
 let lastRequestTime = 0;
@@ -30,37 +29,36 @@ export const useWeatherAPI = () => {
   const fetcher = useDataFetcher<WeatherData>();
   const requestInProgress = useRef(false);
 
+  // Memoize the API key and base URL
+  const config = useCallback(() => {
+    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
+    const baseUrl = import.meta.env.VITE_WEATHER_API_URL;
+    return { apiKey, baseUrl };
+  }, []);
+
+  // Memoize the fetch function
   const fetchWeather = useCallback(
     async (city = 'Bhubaneshwar'): Promise<WeatherData | null> => {
-      // Prevent multiple simultaneous requests
-      if (requestInProgress.current) {
-        console.log('Weather request already in progress, skipping...');
+      const { apiKey, baseUrl } = config();
+
+      if (!apiKey || !baseUrl) {
+        console.error('Weather API configuration missing');
         return null;
       }
 
-      // Check cache first
-      const cacheKey = city.toLowerCase();
-      const cached = weatherCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        console.log('Using cached weather data for', city);
-        return cached.data;
-      }
+      const cacheKey = city;
+      const now = Date.now();
 
       // Rate limiting
-      const now = Date.now();
       if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
         console.log('Rate limiting: too many requests, using cached or returning null');
+        const cached = weatherCache.get(cacheKey);
         return cached?.data || null;
       }
 
       try {
         requestInProgress.current = true;
         lastRequestTime = now;
-
-        // Use environment variables or fallback to direct API
-        const apiKey = import.meta.env.VITE_WEATHER_API_KEY || 'f7429ca057dcb2b75a0e591ee9743a7e';
-        const baseUrl =
-          import.meta.env.VITE_WEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather';
 
         const params = {
           q: city,
@@ -109,7 +107,7 @@ export const useWeatherAPI = () => {
         requestInProgress.current = false;
       }
     },
-    [fetcher],
+    [config, fetcher],
   );
 
   return {
@@ -132,8 +130,16 @@ export const fetchWeatherData = async (city = 'Bhubaneshwar'): Promise<WeatherDa
       return null;
     }
 
-    const url = `${baseUrl}?q=${city}&units=metric&appid=${apiKey}`;
-    const response = await fetch(url);
+    const url = `${baseUrl}?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'omit',
+      mode: 'cors',
+    });
 
     if (!response.ok) {
       throw new Error(`Weather API error: ${response.status}`);
