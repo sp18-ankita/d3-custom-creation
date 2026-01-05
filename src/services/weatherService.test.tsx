@@ -45,7 +45,10 @@ describe('weatherService', () => {
       const result = await fetchWeatherData('TestCity');
 
       expect(result).toEqual(expectedWeatherData);
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('TestCity'));
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('TestCity'),
+        expect.any(Object),
+      );
     });
 
     it('should use default city when no city provided', async () => {
@@ -56,7 +59,10 @@ describe('weatherService', () => {
 
       await fetchWeatherData();
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('Bhubaneshwar'));
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('Bhubaneshwar'),
+        expect.any(Object),
+      );
     });
 
     it('should handle API errors gracefully', async () => {
