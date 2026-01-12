@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SpeedometerControls } from '../components/SpeedometerControls';
 
-vi.mock('../components/NumberInput', () => ({
+vi.mock('../components/NumberInput/NumberInput', () => ({
   NumberInput: ({ label, value, onChange }: JsonInputProps) => (
     <label>
-      {label}
+      {label}:{' '}
       <input
         data-testid={`number-${label.toLowerCase().replace(/\s+/g, '-')}`}
         value={value}
@@ -69,10 +69,10 @@ describe('SpeedometerControls', () => {
     setup();
 
     expect(screen.getByText('Speedometer Settings')).toBeTruthy();
-    expect(screen.getByLabelText('Min')).toBeTruthy();
-    expect(screen.getByLabelText('Value')).toBeTruthy();
-    expect(screen.getByLabelText('Major Ticks')).toBeTruthy();
-    expect(screen.getByLabelText('Zones (JSON)')).toBeTruthy();
+    expect(screen.getByTestId('number-min')).toBeTruthy();
+    expect(screen.getByTestId('number-value')).toBeTruthy();
+    expect(screen.getByTestId('number-major-ticks')).toBeTruthy();
+    expect(screen.getByTestId('json-zones')).toBeTruthy();
   });
 
   it('calls appropriate change handlers on input change', () => {

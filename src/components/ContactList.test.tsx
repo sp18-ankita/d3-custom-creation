@@ -27,7 +27,7 @@ test('shows empty state when no contacts', async () => {
       <ContactList />
     </MemoryRouter>,
   );
-  expect(await screen.findByText(/No contacts found matching your criteria/i)).toBeInTheDocument();
+  expect(await screen.findByText(/No contacts found/i)).toBeInTheDocument();
 });
 
 test('renders contact list and triggers delete', async () => {

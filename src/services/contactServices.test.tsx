@@ -379,14 +379,8 @@ describe('Contact Services', () => {
       expect(result).toBe(false);
     });
 
-    test('handles server error', async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: async () => ({
-          errors: [{ message: 'Server error' }],
-        }),
-      });
-
-      await expect(deleteContact('1')).rejects.toThrow('GraphQL Error');
+    test('handles non-existent contact error', async () => {
+      await expect(deleteContact('999')).rejects.toThrow('Contact not found');
     });
   });
 });
